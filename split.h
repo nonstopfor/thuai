@@ -18,9 +18,11 @@ double dist(double x1, double y1, double x2, double y2) {
 
 double MINBOUND = 0.32;
 double MAXDIST = 425;
-int splitCheck(std::vector<CellInfo> cells, int maxCell, int curCell) {
+int DISASTERROUND
+int splitCheck(std::vector<CellInfo> cells, int maxCell, int curCell, int round) {
 	double maxR = cells[maxCell].r;
-	if (cells[curCell].r > MINBOUND*maxR)
+	if ((cells[curCell].r > MINBOUND*maxR && round < DISASTERROUND) ||
+		(round >= DISASTERROUND && curCell != maxCell))
 		return -1;
 	double x = cells[curCell].x, y = cells[curCell].y;
 	int target = -1;
