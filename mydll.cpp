@@ -6,6 +6,7 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
+#include "split.h"
 #define MI 23
 #define NI 19991
 using std::pair;
