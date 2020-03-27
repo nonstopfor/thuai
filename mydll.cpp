@@ -6,7 +6,6 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
-#include "split.h"
 #define MI 23
 #define NI 19991
 using std::pair;
@@ -20,8 +19,37 @@ info.myCommandList.addCommand(Division,aim_cell_id,direction);//分裂命令，第二个
 info.myCommandList.addCommand(Move,aim_cell_id,direction);//移动命令，第二个参数是移动方向
 info.myCommandList.addCommand(Spit,aim_cell_id,direction);//吞吐命令，第二个参数是吞吐方向
 */
-
+#include<iostream>
+#include<cmath>
+#include<vector>
 using namespace std;
+
+double dist(double x1, double y1, double x2, double y2) {
+	double deltaX = x1 - x2;
+	double deltaY = y1 - y2;
+	return sqrt(deltaX * deltaX + deltaY * deltaY);
+}
+
+double MINBOUND = 0.32;
+double MAXDIST = 425;
+int DISASTERROUND = 700;
+int splitCheck(std::vector<CellInfo> cells, int maxCell, int curCell, int round) {
+	double maxR = cells[maxCell].r;
+	if ((cells[curCell].r > MINBOUND * maxR && round < DISASTERROUND) ||
+		(round >= DISASTERROUND && curCell != maxCell))
+		return -1;
+	double x = cells[curCell].x, y = cells[curCell].y;
+	int target = -1;
+	double minDist = MAXDIST;
+	for (int i = 0; i < cells.size(); ++i) {
+		double distance = dist(x, y, cells[i].x, cells[i].y);
+		if (i != curCell && distance < minDist) {
+			target = i;
+			minDist = distance;
+		}
+	}
+	return target;
+}
 
 bool Judis(PAIR P1, PAIR P2, PAIR yuan, double R) {
 	double A, B, C, dist1, dist2, angle1, angle2;//Ax+By+C=0;//(y1-y2)x +(x2-x1)y +x1y2-y1x2=0
@@ -87,7 +115,7 @@ void player_ai(Info& info)
 
 	for(int i=0;i<myCell.size();i++)
 	{
-		int split = splitCheck(myCell,maxCell,i,info.round)
+		int split = splitCheck(myCell, maxCell, i, info.round);
 		int targetX=10000,targetY=10000;
 		if(split!=-1){
 			targetX = myCell[split].x;
@@ -95,10 +123,10 @@ void player_ai(Info& info)
 		}else{
 			for(auto k:info.nutrientInfo){
 				if((targetX-myCell[i].x)*(targetX-myCell[i].x)+(targetY-myCell[i].y)*(targetY-myCell[i].y)<
-					(k.x-myCell[i].x)*(k.x-myCell[i].x)+(k.y-myCell[i].y)*(k.y-myCell[i].y)){
-					if(safe(info,myCell[i].x,myCell[i].y,myCell[i].r,k.x,k.y)){
-						targetX = k.x;
-						targetY = k.y;
+					(k.nux-myCell[i].x)*(k.nux-myCell[i].x)+(k.nuy-myCell[i].y)*(k.nuy-myCell[i].y)){
+					if(safe(info,myCell[i].x,myCell[i].y,myCell[i].r,k.nux,k.nuy)){
+						targetX = k.nux;
+						targetY = k.nuy;
 					}
 				}
 			}
