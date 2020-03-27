@@ -4,10 +4,12 @@
 #include <math.h>
 #include <time.h>
 #include <utility>
+#include <algorithm>
 #define MI 23
 #define NI 19991
 using std::pair;
 using std::make_pair;
+using std::max;
 typedef pair<double, double> PAIR;
 
 /*
@@ -51,14 +53,14 @@ bool safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, ar)) return false;
+		if (Judis(p1, p2, p3, max(0.0, ar - r))) return false;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
 		double x = t.sx, y = t.sy;
 		double ar = t.sr;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, ar)) return false;
+		if (Judis(p1, p2, p3, max(0.0,ar-r))) return false;
 	}
 	return true;
 }
