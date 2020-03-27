@@ -3,6 +3,7 @@
 #include "definition.h"
 #include <math.h>
 #include <time.h>
+#include <vector>
 #define MI 23
 #define NI 19991
 /*
@@ -12,48 +13,67 @@ info.myCommandList.addCommand(Move,aim_cell_id,direction);//移动命令，第二个参数
 info.myCommandList.addCommand(Spit,aim_cell_id,direction);//吞吐命令，第二个参数是吞吐方向
 */
 
+using namespace std;
+
 void player_ai(Info& info)
 {
-	
-	int Mycellnum = -1;
-	int Mycell_x, Mycell_y = -1;
+	vector<CellInfo> myCell;
+	int maxCell = 0;
 	int MincellNum = -1;
 	int MincellRadius = info.cellInfo[0].r;
 	int Mincell_x, Mincell_y = -1;
 	TPlayerID myid = info.myID;
 	for (int i = 0; i < info.cellInfo.size(); i++)
-	{
 		if (info.cellInfo[i].ownerid == myid)
-		{
-			Mycellnum = info.cellInfo[i].id;
-			Mycell_x = info.cellInfo[i].x;
-			Mycell_y = info.cellInfo[i].y;
-		}
-		if (info.cellInfo[i].r <= MincellRadius && Mycellnum != i)
-		{
-			Mincell_x = info.cellInfo[i].x;
-			Mincell_y = info.cellInfo[i].y;
-			MincellNum = i;
-		}
-	}
-	if (Mycellnum != -1)
+			myCell.push_back(info.cellInfo[i]);
+
+	for(int i=0;i<myCell.size();i++)
+		if(myCell[i].r>myCell[maxCell].r)
+			maxCell = i;
+
+	for(int i=0;i<myCell.size();i++)
 	{
+		int split = splitCheck(myCell,maxCell,i,info.round)
+		int targetX=10000,targetY=10000;
+		if(split!=-1){
+			targetX = myCell[split].x;
+			targetY = myCell[split].y;
+		}else{
+			for(auto k:info.nutrientInfo){
+				if((targetX-myCell[i].x)*(targetX-myCell[i].x)+(targetY-myCell[i].y)*(targetY-myCell[i].y)<
+					(k.x-myCell[i].x)*(k.x-myCell[i].x)+(k.y-myCell[i].y)*(k.y-myCell[i].y)){
+					if(safe(info,myCell[i].x,myCell[i].y,myCell[i].r,k.x,k.y)){
+						targetX = k.x;
+						targetY = k.y;
+					}
+				}
+			}
+			for(auto k:info.cellInfo){
+				if(k.ownerid!=myid && k.r<myCell[i].r && (targetX-myCell[i].x)*(targetX-myCell[i].x)+(targetY-myCell[i].y)*(targetY-myCell[i].y)<
+					(k.x-myCell[i].x)*(k.x-myCell[i].x)+(k.y-myCell[i].y)*(k.y-myCell[i].y)){
+					if(safe(info,myCell[i].x,myCell[i].y,myCell[i].r,k.x,k.y)){
+						targetX = k.x;
+						targetY = k.y;
+					}
+				}
+			}
+		}
 		int direction = 0;
 		double pi = 3.14159265;
 		int dx, dy = 0;
-		if (MincellNum != -1)
+		if (targetX != 10000)
 		{
-			dx = Mincell_x - Mycell_x;
-			dy = Mincell_y - Mycell_y;
+			dx = targetX - myCell[i].x;
+			dy = targetY - myCell[i].y;
 			direction = (int)(atan2(dy, dx) / pi * 180 + 360) % 360;
-			info.myCommandList.addCommand(Move, Mycellnum, direction);
+			info.myCommandList.addCommand(Move, myCell[i].id, direction);
 		}
 		else
 		{
-			dx = 150 - Mycell_x;
-			dy = 150 - Mycell_y;
+			dx = 150 - myCell[i].x;
+			dy = 150 - myCell[i].y;
 			direction = (int)(atan2(dy, dx) / pi * 180 + 360) % 360;
-			info.myCommandList.addCommand(Move, Mycellnum, direction);
+			info.myCommandList.addCommand(Move, myCell[i].id, direction);
 		}
 	}
 
