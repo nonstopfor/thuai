@@ -10,7 +10,7 @@
 using namespace std;
 #define MI 23
 #define NI 19991
-const int N = 300;
+const double N = 300;
 const double lam = 0.9;//小细胞与大细胞半径比值小于这个时被吞噬
 typedef pair<double, double> PAIR;
 /*
@@ -27,9 +27,9 @@ double dist(double x1, double y1, double x2, double y2) {
 	return sqrt(deltaX * deltaX + deltaY * deltaY);
 }
 
-double distCell(CellInfo c1,CellInfo c2,bool removeRadius = false){
-	double distRaw=dist(c1.x,c1.y,c2.x,c2.y);
-	if(removeRadius) distRaw -= c1.r+c2.r;
+double distCell(CellInfo c1, CellInfo c2, bool removeRadius = false) {
+	double distRaw = dist(c1.x, c1.y, c2.x, c2.y);
+	if (removeRadius) distRaw -= c1.r + c2.r;
 	return distRaw;
 }
 
@@ -38,7 +38,7 @@ double MAXDIST = 425;
 double DISTFACTOR = 1.1;
 int DISASTERROUND = 700;
 int splitCheck(std::vector<CellInfo> cells, int maxCell, int curCell,
-			   int round, CellInfo nearestEnemy) {
+	int round, CellInfo nearestEnemy) {
 
 	double maxR = cells[maxCell].r;
 	double enemyR = nearestEnemy.r;
@@ -47,9 +47,9 @@ int splitCheck(std::vector<CellInfo> cells, int maxCell, int curCell,
 	bool enemyJudge = maxR > 0.9 * enemyR;
 	if (!enemyJudge) {
 		double distToEnemy = dist(
-				cells[curCell].x, cells[curCell].y,
-				nearestEnemy.x, nearestEnemy.y
-				);
+			cells[curCell].x, cells[curCell].y,
+			nearestEnemy.x, nearestEnemy.y
+		);
 		enemyJudge = distToEnemy > DISTFACTOR * (maxR + enemyR); //max cell is still far from enemy
 	}
 	if (minboundJudge && roundJudge && enemyJudge)
@@ -127,29 +127,28 @@ void player_ai(Info& info)
 
 	TPlayerID myID = info.myID;
 	for (int i = 0; i < info.cellInfo.size(); i++)
-		if (info.cellInfo[i].ownerid == myID&&info.cellInfo[i].live)
 		if (info.cellInfo[i].ownerid == myID)
 			myCell.push_back(info.cellInfo[i]);
 
 	for (int i = 0; i < myCell.size(); i++)
 		if (myCell[i].r > myCell[maxCell].r)
 			maxCell = i;
-
-	int nearestEnemy=0;// index in all cells
-	while(info.cellInfo[nearestEnemy].ownerid == myID) nearestEnemy++;
-	for(int k = nearestEnemy+1;k<info.cellInfo.size();k++){
-		if(info.cellInfo[k].ownerid == myID) continue;
+	if (myCell.empty()) return;
+	int nearestEnemy = 0;// index in all cells
+	while (nearestEnemy < info.cellInfo.size() && info.cellInfo[nearestEnemy].ownerid == myID) nearestEnemy++;
+	for (int k = nearestEnemy + 1; k < info.cellInfo.size(); k++) {
+		if (info.cellInfo[k].ownerid == myID) continue;
 		CellInfo e = info.cellInfo[k];
 		CellInfo m = myCell[maxCell];
-		if(distCell(e,m,true)<distCell(info.cellInfo[nearestEnemy],m,true))
+		if (distCell(e, m, true) < distCell(info.cellInfo[nearestEnemy], m, true))
 			nearestEnemy = k;
 	}
-	if(nearestEnemy>=info.cellInfo.size()) return;
+	if (nearestEnemy >= info.cellInfo.size()) return;
 
 
 	for (int i = 0; i < myCell.size(); i++)
 	{
-		int split = splitCheck(myCell, maxCell, i, info.round,info.cellInfo[nearestEnemy]);
+		int split = splitCheck(myCell, maxCell, i, info.round, info.cellInfo[nearestEnemy]);
 		double targetX = 10000, targetY = 10000;
 		if (split != -1) {
 			targetX = myCell[split].x;
@@ -157,8 +156,9 @@ void player_ai(Info& info)
 		}
 		else {
 			for (auto& k : info.nutrientInfo) {
-				if (min(abs(k.nux), abs(N - k.nux)) <= myCell[i].r / 3) continue;
-				if (min(abs(k.nuy), abs(N - k.nuy)) <= myCell[i].r / 3) continue;
+				double t = 1 - sqrt(2) / 3;
+				if (min(abs(k.nux), abs(N - k.nux)) <= myCell[i].r * t) continue;
+				if (min(abs(k.nuy), abs(N - k.nuy)) <= myCell[i].r * t) continue;
 				if ((targetX - myCell[i].x) * (targetX - myCell[i].x) + (targetY - myCell[i].y) * (targetY - myCell[i].y) >
 					(k.nux - myCell[i].x) * (k.nux - myCell[i].x) + (k.nuy - myCell[i].y) * (k.nuy - myCell[i].y)) {
 					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.nux, k.nuy)) {
@@ -168,10 +168,12 @@ void player_ai(Info& info)
 				}
 			}
 
-			for (auto k : info.cellInfo) {
-				if (!k.live) continue;
-
-				if (k.ownerid != myID && k.r < myCell[i].r && (targetX - myCell[i].x) * (targetX - myCell[i].x) + (targetY - myCell[i].y) * (targetY - myCell[i].y) >
+			for (auto& k : info.cellInfo) {
+				if (k.ownerid == myID) continue;
+				double t = 1 - sqrt(2) / 3;
+				if (min(abs(k.x), abs(N - k.x)) <= myCell[i].r * t) continue;
+				if (min(abs(k.y), abs(N - k.y)) <= myCell[i].r * t) continue;
+				if (k.r < myCell[i].r * lam && (targetX - myCell[i].x) * (targetX - myCell[i].x) + (targetY - myCell[i].y) * (targetY - myCell[i].y) >
 					(k.x - myCell[i].x) * (k.x - myCell[i].x) + (k.y - myCell[i].y) * (k.y - myCell[i].y)) {
 					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.x, k.y)) {
 						targetX = k.x;
@@ -184,16 +186,23 @@ void player_ai(Info& info)
 		double pi = 3.14159265;
 		//cout << "targetX:" << targetX << " targetY:" << targetY << endl;
 		//cout << "myCellX:" << myCell[i].x << " myCellY:" << myCell[i].y << endl;
-		if (targetX < N + 1)
-		{
-			direction = compute_dir(targetX, targetY, myCell[i].x, myCell[i].y);
-			info.myCommandList.addCommand(Move, myCell[i].id, direction);
-		}
-		else
-		{
+		if (info.round > 800) {
 			direction = compute_dir(150, 150, myCell[i].x, myCell[i].y);
 			info.myCommandList.addCommand(Move, myCell[i].id, direction);
 		}
+		else {
+			if (targetX < N + 1)
+			{
+				direction = compute_dir(targetX, targetY, myCell[i].x, myCell[i].y);
+				info.myCommandList.addCommand(Move, myCell[i].id, direction);
+			}
+			else
+			{
+				direction = compute_dir(150, 150, myCell[i].x, myCell[i].y);
+				info.myCommandList.addCommand(Move, myCell[i].id, direction);
+			}
+		}
+
 	}
 
 }
