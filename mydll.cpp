@@ -27,11 +27,24 @@ double dist(double x1, double y1, double x2, double y2) {
 
 double MINBOUND = 0.32;
 double MAXDIST = 425;
+double DISTFACTOR = 1.1;
 int DISASTERROUND = 700;
-int splitCheck(std::vector<CellInfo> cells, int maxCell, int curCell, int round) {
+int splitCheck(std::vector<CellInfo> cells, int maxCell, int curCell,
+			   int round, CellInfo nearestEnemy) {
+
 	double maxR = cells[maxCell].r;
-	if ((cells[curCell].r > MINBOUND * maxR && round < DISASTERROUND) ||
-		(round >= DISASTERROUND && curCell != maxCell))
+	double enemyR = nearestEnemy.r;
+	bool minboundJudge = cells[curCell].r > MINBOUND * maxR;
+	bool roundJudge = round < DISASTERROUND || curCell == maxCell;
+	bool enemyJudge = maxR > 0.9 * enemyR;
+	if (!enemyJudge) {
+		double distToEnemy = dist(
+				cells[curCell].x, cells[curCell].y,
+				nearestEnemy.x, nearestEnemy.y
+				);
+		enemyJudge = distToEnemy > DISTFACTOR * (maxR + enemyR); //max cell is still far from enemy
+	}
+	if (minboundJudge && roundJudge && enemyJudge)
 		return -1;
 	double x = cells[curCell].x, y = cells[curCell].y;
 	int target = -1;
