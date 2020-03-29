@@ -13,7 +13,7 @@ using namespace std;
 const double N = 300;
 const double MINR = 6;
 const double lam = 0.9;//Ð¡Ï¸°ûÓë´óÏ¸°û°ë¾¶±ÈÖµÐ¡ÓÚÕâ¸öÊ±±»ÍÌÊÉ
-Info globalInfo;
+Info* globalInfo;
 typedef pair<double, double> PAIR;
 /*
 »ù±¾µÄÈý¸öÌí¼ÓÖ¸ÁîµÄÃüÁî
@@ -122,9 +122,9 @@ int compute_dir(double tx, double ty, double sx, double sy,double r=-1) {//ËãÈÆÂ
 	double dy = ty - sy;
 	double pi = 3.14159265;
 	int spike = -1;
-	for (int i = 0; i < globalInfo.spikyballInfo.size(); ++i) {
+	for (int i = 0; i < globalInfo->spikyballInfo.size(); ++i) {
 		if(r==-1) break;
-		auto& t = globalInfo.spikyballInfo[i];
+		auto& t = globalInfo->spikyballInfo[i];
 		double x = t.sx, y = t.sy;
 		double ar = t.sr;
 		auto p3 = make_pair(x, y);
@@ -134,28 +134,17 @@ int compute_dir(double tx, double ty, double sx, double sy,double r=-1) {//ËãÈÆÂ
 			if(spike == -1)
 				spike = i;
 			else{
-				if(dist(sx,sy,globalInfo.spikyballInfo[spike].sx,globalInfo.spikyballInfo[spike].sy)>
-					dist(sx,sy,globalInfo.spikyballInfo[i].sx,globalInfo.spikyballInfo[i].sy))
+				if(dist(sx,sy,globalInfo->spikyballInfo[spike].sx,globalInfo->spikyballInfo[spike].sy)
+					-globalInfo->spikyballInfo[spike].sr>
+					dist(sx,sy,x,y)-ar)
 					spike = i;
 			}
 		}
 	}
-	if(spike!=-1){
-		double Dx = globalInfo.spikyballInfo[spike].sx - sx;
-		double Dy = globalInfo.spikyballInfo[spike].sy - sy;
-		double distSpike2 = Dx*Dx + Dy*Dy;//µ½´ÌÇòÐÄ
-		double R = globalInfo.spikyballInfo[spike].sr + r;
-		double chosenDx,chosenDy;
-		double distTan2 = distSpike2 - R*R;//ÇÐÏß³¤
-		chosenDx = Dx*distTan2/distSpike2;
-		chosenDy = Dy*distTan2/distSpike2;
-		double height2 = distTan2 - distTan2*distTan2/distSpike2;//Ö±½ÇÈý½ÇÐÎµÄ¸ß
-		chosenDx += Dy*sqrt(height2)/sqrt(distSpike2);
-		chosenDy += -Dx*sqrt(height2)/sqrt(distSpike2);
-		dx = chosenDx;
-		dy = chosenDy;
-	}
 	int direction = (int)(atan2(dy, dx) / pi * 180 + 360) % 360;
+	if(spike!=-1){
+		direction += 90;
+	}
 	return direction;
 }
 
@@ -186,7 +175,7 @@ bool catchable(CellInfo me, CellInfo enemy) {
 
 void player_ai(Info& info)
 {
-	globalInfo = info;
+	globalInfo = &info;
 
 	vector<CellInfo> myCell;
 	int maxCell = 0;// index in myCell
