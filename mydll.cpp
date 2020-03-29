@@ -120,6 +120,30 @@ int compute_dir(double tx, double ty, double sx, double sy) {
 	return direction;
 }
 
+bool catchable(CellInfo me, CellInfo enemy) {
+	double distance = dist(me.x, me.y, enemy.x, enemy.y);
+	distance = distance - 2.0 / 3.0 * me.r;
+	double dist_hat_dir = compute_dir(enemy.x, enemy.y, me.x, me.y);
+	double mySpeed = me.v * cos(me.d - dist_hat_dir);
+	double enemySpeed = enemy.v * cos(enemy.v - dist_hat_dir);
+	double myAcc = 10/me.r, enAcc = 10/enemy.r, 
+		   myTop = 20/me.r;
+	double t = (myTop - mySpeed)/myAcc,
+		   t_limit = (myTop - enemySpeed)/enAcc;
+	if (t >= t_limit) {
+		double runDist = (mySpeed - enemySpeed) * t_limit +
+						 0.5 * (myAcc - enAcc) * t_limit * t_limit;
+		return runDist > distance;
+	} else {
+		double deltaT = t_limit - t;
+		double runDist = (mySpeed - enemySpeed) * t +
+						 0.5 * (myAcc - enAcc) * t * t +
+						 (myTop - enemySpeed - enAcc * t) * deltaT -
+						 0.5 * enAcc * deltaT * deltaT;
+		return runDist > distance;
+	}
+}
+
 void player_ai(Info& info)
 {
 	vector<CellInfo> myCell;
