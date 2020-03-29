@@ -25,6 +25,12 @@ double dist(double x1, double y1, double x2, double y2) {
 	return sqrt(deltaX * deltaX + deltaY * deltaY);
 }
 
+double distCell(CellInfo c1,CellInfo c2,bool removeRadius = false){
+	double distRaw=dist(c1.x,c1.y,c2.x,c2.y);
+	if(removeRadius) distRaw -= c1.r+c2.r;
+	return distRaw;
+}
+
 double MINBOUND = 0.32;
 double MAXDIST = 425;
 double DISTFACTOR = 1.1;
@@ -82,13 +88,13 @@ bool Judis(PAIR P1, PAIR P2, PAIR yuan, double R) {
 
 }
 bool safe(Info& info, double x1, double y1, double r, double x2, double y2) {
-	TPlayerID myid = info.myID;
+	TPlayerID myID = info.myID;
 	auto p1 = make_pair(x1, y1);
 	auto p2 = make_pair(x2, y2);
 
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		auto& cell = info.cellInfo[i];
-		if (cell.ownerid == myid) continue;
+		if (cell.ownerid == myID) continue;
 		if (cell.r <= r) continue;
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
@@ -115,22 +121,32 @@ int compute_dir(double tx, double ty, double sx, double sy) {
 void player_ai(Info& info)
 {
 	vector<CellInfo> myCell;
-	int maxCell = 0;
-	int MincellNum = -1;
-	int MincellRadius = info.cellInfo[0].r;
-	int Mincell_x, Mincell_y = -1;
-	TPlayerID myid = info.myID;
+	int maxCell = 0;// index in myCell
+
+	TPlayerID myID = info.myID;
 	for (int i = 0; i < info.cellInfo.size(); i++)
-		if (info.cellInfo[i].ownerid == myid)
+		if (info.cellInfo[i].ownerid == myID)
 			myCell.push_back(info.cellInfo[i]);
 
 	for (int i = 0; i < myCell.size(); i++)
 		if (myCell[i].r > myCell[maxCell].r)
 			maxCell = i;
 
+	int nearestEnemy=0;// index in all cells
+	while(info.cellInfo[nearestEnemy].ownerid == myID) nearestEnemy++;
+	for(int k = nearestEnemy+1;k<info.cellInfo.size();k++){
+		if(info.cellInfo[k].ownerid == myID) continue;
+		CellInfo e = info.cellInfo[k];
+		CellInfo m = myCell[maxCell];
+		if(distCell(e,m,removeRadius=true)<distCell(info.cellInfo[nearestEnemy],m,removeRadius=true))
+			nearestEnemy = k;
+	}
+	if(nearestEnemy>=info.cellInfo.size()) return;
+
+
 	for (int i = 0; i < myCell.size(); i++)
 	{
-		int split = splitCheck(myCell, maxCell, i, info.round);
+		int split = splitCheck(myCell, maxCell, i, info.round,info.cellInfo[nearestEnemy]);
 		double targetX = 10000, targetY = 10000;
 		if (split != -1) {
 			targetX = myCell[split].x;
@@ -147,7 +163,7 @@ void player_ai(Info& info)
 				}
 			}
 			for (auto k : info.cellInfo) {
-				if (k.ownerid != myid && k.r < myCell[i].r && (targetX - myCell[i].x) * (targetX - myCell[i].x) + (targetY - myCell[i].y) * (targetY - myCell[i].y) >
+				if (k.ownerid != myID && k.r < myCell[i].r && (targetX - myCell[i].x) * (targetX - myCell[i].x) + (targetY - myCell[i].y) * (targetY - myCell[i].y) >
 					(k.x - myCell[i].x) * (k.x - myCell[i].x) + (k.y - myCell[i].y) * (k.y - myCell[i].y)) {
 					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.x, k.y)) {
 						targetX = k.x;
