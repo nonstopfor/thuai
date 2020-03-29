@@ -11,6 +11,7 @@ using namespace std;
 #define MI 23
 #define NI 19991
 const double N = 300;
+const double MINR = 6;
 const double lam = 0.9;//小细胞与大细胞半径比值小于这个时被吞噬
 typedef pair<double, double> PAIR;
 /*
@@ -89,7 +90,10 @@ bool Judis(PAIR P1, PAIR P2, PAIR yuan, double R) {
 	return false;//不相交
 
 }
-bool safe(Info& info, double x1, double y1, double r, double x2, double y2) {
+int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
+	//-2表示路径上有其他细胞
+	//-1表示路径安全
+	//0-x 表示路径上有刺球，返回刺球idx
 	TPlayerID myID = info.myID;
 	auto p1 = make_pair(x1, y1);
 	auto p2 = make_pair(x2, y2);
@@ -97,20 +101,20 @@ bool safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		auto& cell = info.cellInfo[i];
 		if (cell.ownerid == myID) continue;
-		if (cell.r <= r) continue;
+		if (r / cell.r > lam) continue;
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, ar + r)) return false;
+		if (Judis(p1, p2, p3, ar + r)) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
 		double x = t.sx, y = t.sy;
 		double ar = t.sr;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, ar + r)) return false;
+		if (Judis(p1, p2, p3, ar + r)) return i;
 	}
-	return true;
+	return -1;
 }
 int compute_dir(double tx, double ty, double sx, double sy) {
 	double dx = tx - sx;
@@ -126,20 +130,21 @@ bool catchable(CellInfo me, CellInfo enemy) {
 	double dist_hat_dir = compute_dir(enemy.x, enemy.y, me.x, me.y);
 	double mySpeed = me.v * cos(me.d - dist_hat_dir);
 	double enemySpeed = enemy.v * cos(enemy.v - dist_hat_dir);
-	double myAcc = 10/me.r, enAcc = 10/enemy.r, 
-		   myTop = 20/me.r;
-	double t = (myTop - mySpeed)/myAcc,
-		   t_limit = (myTop - enemySpeed)/enAcc;
+	double myAcc = 10 / me.r, enAcc = 10 / enemy.r,
+		myTop = 20 / me.r;
+	double t = (myTop - mySpeed) / myAcc,
+		t_limit = (myTop - enemySpeed) / enAcc;
 	if (t >= t_limit) {
 		double runDist = (mySpeed - enemySpeed) * t_limit +
-						 0.5 * (myAcc - enAcc) * t_limit * t_limit;
+			0.5 * (myAcc - enAcc) * t_limit * t_limit;
 		return runDist > distance;
-	} else {
+	}
+	else {
 		double deltaT = t_limit - t;
 		double runDist = (mySpeed - enemySpeed) * t +
-						 0.5 * (myAcc - enAcc) * t * t +
-						 (myTop - enemySpeed - enAcc * t) * deltaT -
-						 0.5 * enAcc * deltaT * deltaT;
+			0.5 * (myAcc - enAcc) * t * t +
+			(myTop - enemySpeed - enAcc * t) * deltaT -
+			0.5 * enAcc * deltaT * deltaT;
 		return runDist > distance;
 	}
 }
@@ -179,32 +184,85 @@ void player_ai(Info& info)
 			targetY = myCell[split].y;
 		}
 		else {
-			for (auto& k : info.nutrientInfo) {
+			vector<int>nutrient_idx;//将营养物质按到当前细胞的距离大小排序
+
+			for (int j = 0; j < info.nutrientInfo.size(); ++j) {
+				auto& k = info.nutrientInfo[j];
 				double t = 1 - sqrt(2) / 3;
 				if (min(abs(k.nux), abs(N - k.nux)) <= myCell[i].r * t) continue;
 				if (min(abs(k.nuy), abs(N - k.nuy)) <= myCell[i].r * t) continue;
-				if ((targetX - myCell[i].x) * (targetX - myCell[i].x) + (targetY - myCell[i].y) * (targetY - myCell[i].y) >
-					(k.nux - myCell[i].x) * (k.nux - myCell[i].x) + (k.nuy - myCell[i].y) * (k.nuy - myCell[i].y)) {
-					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.nux, k.nuy)) {
-						targetX = k.nux;
-						targetY = k.nuy;
-					}
+				int w = safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.nux, k.nuy);
+				if (w != -2) {
+					//如果不是路径上有其他细胞
+					nutrient_idx.push_back(j);
 				}
 			}
-
-			for (auto& k : info.cellInfo) {
+			sort(nutrient_idx.begin(), nutrient_idx.end(), [&](int a, int b) {
+				double d1 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[a].nux, info.nutrientInfo[a].nuy);
+				double d2 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[b].nux, info.nutrientInfo[b].nuy);
+				return d1 < d2;
+				});
+			vector<int>cell_idx;//将其他小细胞按到当前细胞的距离大小排序
+			for (int j = 0; j < info.cellInfo.size(); ++j) {
+				auto& k = info.cellInfo[j];
 				if (k.ownerid == myID) continue;
+				if (k.r >= myCell[i].r * lam) continue;
 				double t = 1 - sqrt(2) / 3;
 				if (min(abs(k.x), abs(N - k.x)) <= myCell[i].r * t) continue;
 				if (min(abs(k.y), abs(N - k.y)) <= myCell[i].r * t) continue;
-				if (k.r < myCell[i].r * lam && (targetX - myCell[i].x) * (targetX - myCell[i].x) + (targetY - myCell[i].y) * (targetY - myCell[i].y) >
-					(k.x - myCell[i].x) * (k.x - myCell[i].x) + (k.y - myCell[i].y) * (k.y - myCell[i].y)) {
-					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.x, k.y)) {
-						targetX = k.x;
-						targetY = k.y;
-					}
+				int w = safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.x, k.y);
+				if (w != -2) {
+					//如果不是路径上有其他细胞
+					cell_idx.push_back(j);
 				}
 			}
+			sort(cell_idx.begin(), cell_idx.end(), [&](int a, int b) {
+				double d1 = dist(myCell[i].x, myCell[i].y, info.cellInfo[a].x, info.cellInfo[a].y);
+				double d2 = dist(myCell[i].x, myCell[i].y, info.cellInfo[b].x, info.cellInfo[b].y);
+				return d1 < d2;
+				});
+			double dn0 = 10000, dn1 = 10000, dc0 = 10000, dc1 = 10000;
+			if (nutrient_idx.size() >= 2) dn1 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy);
+			if (nutrient_idx.size() >= 1) dn0 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
+			int i0 = 0;
+			while (i0 < cell_idx.size() && !catchable(myCell[i], info.cellInfo[cell_idx[i0]])) ++i0;
+			int i1 = i0 + 1;
+			while (i1 < cell_idx.size() && !catchable(myCell[i], info.cellInfo[cell_idx[i1]])) ++i1;
+
+			if (i1 < cell_idx.size()) dc1 = dist(myCell[i].x, myCell[i].y, info.cellInfo[cell_idx[i1]].x, info.cellInfo[cell_idx[i1]].y);
+			if (i0 < cell_idx.size()) dc0 = dist(myCell[i].x, myCell[i].y, info.cellInfo[cell_idx[i0]].x, info.cellInfo[cell_idx[i0]].y);
+			double dd = 20;//距离差的阙值
+			if (dn1 < dc0) {
+				//最近的两个是营养物质
+				//cout << "两个营养物质" << endl;
+				if (dn1 - dn0 < dd && myCell.size() < 6 && myCell[i].r > sqrt(2) * MINR && info.round < 100) {
+					//int dir0 = compute_dir(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
+					int dir1 = compute_dir(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy);
+					info.myCommandList.addCommand(Division, myCell[i].id, dir1);
+					//cout << "分裂" << endl;
+					continue;
+				}
+				else {
+					//cout << "追近的营养物质" << endl;
+					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
+					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
+				}
+			}
+			else if (dc1 < dn0) {
+				//最近的两个是细胞
+				targetX = info.cellInfo[cell_idx[i0]].x;
+				targetY = info.cellInfo[cell_idx[i0]].y;
+			}
+			else {
+				//最近的两个，一个是细胞，一个是营养物质
+				//由于细胞可追，故优先追细胞
+				if (i0 < cell_idx.size()) {
+					targetX = info.cellInfo[cell_idx[i0]].x;
+					targetY = info.cellInfo[cell_idx[i0]].y;
+				}
+
+			}
+
 		}
 		int direction = 0;
 		double pi = 3.14159265;
