@@ -122,9 +122,9 @@ int compute_dir(double tx, double ty, double sx, double sy,double r=-1) {//ËãÈÆÂ
 	double dy = ty - sy;
 	double pi = 3.14159265;
 	int spike = -1;
-	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
+	for (int i = 0; i < globalInfo.spikyballInfo.size(); ++i) {
 		if(r==-1) break;
-		auto& t = info.spikyballInfo[i];
+		auto& t = globalInfo.spikyballInfo[i];
 		double x = t.sx, y = t.sy;
 		double ar = t.sr;
 		auto p3 = make_pair(x, y);
@@ -322,7 +322,7 @@ void player_ai(Info& info)
 				for(double i=0;i<360;i+=1){
 					double dx = cos(i/360*2*pi)*N;
 					double dy = sin(i/360*2*pi)*N;
-					if(safe(Info,myCell[i].x,myCell[i].y,myCell[i].r,myCell[i].x+dx,myCell[i].y+dy)){
+					if(safe(info,myCell[i].x,myCell[i].y,myCell[i].r,myCell[i].x+dx,myCell[i].y+dy)){
 						direction = compute_dir(myCell[i].x+dx, myCell[i].y+dy, myCell[i].x, myCell[i].y,myCell[i].r);
 						info.myCommandList.addCommand(Move, myCell[i].id, direction);
 						break;
