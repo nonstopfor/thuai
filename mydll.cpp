@@ -211,7 +211,7 @@ void player_ai(Info& info)
 	}
 	if (nearestEnemy >= info.cellInfo.size()) return;
 
-
+	vector<bool>vis(info.nutrientInfo.size(), false);
 	for (int i = 0; i < myCell.size(); i++)
 	{
 		int split = splitCheck(myCell, maxCell, i, info.round, info.cellInfo[nearestEnemy]);
@@ -224,6 +224,7 @@ void player_ai(Info& info)
 			vector<int>nutrient_idx;//将营养物质按到当前细胞的距离大小排序
 
 			for (int j = 0; j < info.nutrientInfo.size(); ++j) {
+				if (vis[j]) continue;
 				auto& k = info.nutrientInfo[j];
 				double t = 1 - sqrt(2) / 3;
 				if (min(abs(k.nux), abs(N - k.nux)) <= myCell[i].r * t) continue;
@@ -281,6 +282,7 @@ void player_ai(Info& info)
 				}
 				else {
 					//cout << "追近的营养物质" << endl;
+					vis[nutrient_idx[0]] = true;
 					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
 					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
 				}
