@@ -13,6 +13,7 @@ using namespace std;
 const double N = 300;
 const double MINR = 6;
 const double lam = 0.9;//小细胞与大细胞半径比值小于这个时被吞噬
+Info globalInfo;
 typedef pair<double, double> PAIR;
 /*
 基本的三个添加指令的命令
@@ -116,10 +117,44 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 	}
 	return -1;
 }
-int compute_dir(double tx, double ty, double sx, double sy) {
+int compute_dir(double tx, double ty, double sx, double sy,double r=-1) {//算绕路就加r，是自己的半径
 	double dx = tx - sx;
 	double dy = ty - sy;
 	double pi = 3.14159265;
+	int spike = -1;
+	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
+		if(r==-1) break;
+		auto& t = info.spikyballInfo[i];
+		double x = t.sx, y = t.sy;
+		double ar = t.sr;
+		auto p3 = make_pair(x, y);
+		auto p1 = make_pair(sx, sy);
+		auto p2 = make_pair(tx, ty);
+		if (Judis(p1, p2, p3, ar+r)){// find nearest spike
+			if(spike == -1)
+				spike = i;
+			else{
+				if(dist(sx,sy,globalInfo.spikyballInfo[spike].sx,globalInfo.spikyballInfo[spike].sy)>
+					dist(sx,sy,globalInfo.spikyballInfo[i].sx,globalInfo.spikyballInfo[i].sy))
+					spike = i;
+			}
+		}
+	}
+	if(spike!=-1){
+		double Dx = globalInfo.spikyballInfo[spike].sx - sx;
+		double Dy = globalInfo.spikyballInfo[spike].sy - sy;
+		double distSpike2 = Dx*Dx + Dy*Dy;//到刺球心
+		double R = globalInfo.spikyballInfo[spike].sr + r;
+		double chosenDx,chosenDy;
+		double distTan2 = distSpike2 - R*R;//切线长
+		chosenDx = Dx*distTan2/distSpike2;
+		chosenDy = Dy*distTan2/distSpike2;
+		double height2 = distTan2 - distTan2*distTan2/distSpike2;//直角三角形的高
+		chosenDx += Dy*sqrt(height2)/sqrt(distSpike2);
+		chosenDy += -Dx*sqrt(height2)/sqrt(distSpike2);
+		dx = chosenDx;
+		dy = chosenDy;
+	}
 	int direction = (int)(atan2(dy, dx) / pi * 180 + 360) % 360;
 	return direction;
 }
@@ -151,6 +186,8 @@ bool catchable(CellInfo me, CellInfo enemy) {
 
 void player_ai(Info& info)
 {
+	globalInfo = info;
+
 	vector<CellInfo> myCell;
 	int maxCell = 0;// index in myCell
 
@@ -275,13 +312,20 @@ void player_ai(Info& info)
 		else {
 			if (targetX < N + 1)
 			{
-				direction = compute_dir(targetX, targetY, myCell[i].x, myCell[i].y);
+				direction = compute_dir(targetX, targetY, myCell[i].x, myCell[i].y,myCell[i].r);
 				info.myCommandList.addCommand(Move, myCell[i].id, direction);
 			}
 			else
 			{
-				direction = compute_dir(150, 150, myCell[i].x, myCell[i].y);
-				info.myCommandList.addCommand(Move, myCell[i].id, direction);
+				for(double i=0;i<360;i+=1){
+					double dx = cos(i/360*2*pi)*N;
+					double dy = sin(i/360*2*pi)*N;
+					if(safe(Info,myCell[i].x,myCell[i].y,myCell[i].r,myCell[i].x+dx,myCell[i].y+dy)){
+						direction = compute_dir(myCell[i].x+dx, myCell[i].y+dy, myCell[i].x, myCell[i].y,myCell[i].r);
+						info.myCommandList.addCommand(Move, myCell[i].id, direction);
+						break;
+					}
+				}
 			}
 		}
 
