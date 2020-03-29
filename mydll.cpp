@@ -10,6 +10,8 @@
 using namespace std;
 #define MI 23
 #define NI 19991
+const int N = 300;
+const double lam = 0.9;//小细胞与大细胞半径比值小于这个时被吞噬
 typedef pair<double, double> PAIR;
 /*
 基本的三个添加指令的命令
@@ -108,7 +110,7 @@ void player_ai(Info& info)
 	int Mincell_x, Mincell_y = -1;
 	TPlayerID myid = info.myID;
 	for (int i = 0; i < info.cellInfo.size(); i++)
-		if (info.cellInfo[i].ownerid == myid)
+		if (info.cellInfo[i].ownerid == myid&&info.cellInfo[i].live)
 			myCell.push_back(info.cellInfo[i]);
 
 	for (int i = 0; i < myCell.size(); i++)
@@ -124,7 +126,9 @@ void player_ai(Info& info)
 			targetY = myCell[split].y;
 		}
 		else {
-			for (auto k : info.nutrientInfo) {
+			for (auto& k : info.nutrientInfo) {
+				if (min(abs(k.nux), abs(N - k.nux)) <= myCell[i].r / 3) continue;
+				if (min(abs(k.nuy), abs(N - k.nuy)) <= myCell[i].r / 3) continue;
 				if ((targetX - myCell[i].x) * (targetX - myCell[i].x) + (targetY - myCell[i].y) * (targetY - myCell[i].y) >
 					(k.nux - myCell[i].x) * (k.nux - myCell[i].x) + (k.nuy - myCell[i].y) * (k.nuy - myCell[i].y)) {
 					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.nux, k.nuy)) {
@@ -133,8 +137,9 @@ void player_ai(Info& info)
 					}
 				}
 			}
-			for (auto k : info.cellInfo) {
-				if (k.ownerid != myid && k.r < myCell[i].r && (targetX - myCell[i].x) * (targetX - myCell[i].x) + (targetY - myCell[i].y) * (targetY - myCell[i].y) >
+			for (auto& k : info.cellInfo) {
+				if (!k.live) continue;
+				if (k.ownerid != myid && k.r < myCell[i].r*lam && (targetX - myCell[i].x) * (targetX - myCell[i].x) + (targetY - myCell[i].y) * (targetY - myCell[i].y) >
 					(k.x - myCell[i].x) * (k.x - myCell[i].x) + (k.y - myCell[i].y) * (k.y - myCell[i].y)) {
 					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.x, k.y)) {
 						targetX = k.x;
@@ -147,9 +152,9 @@ void player_ai(Info& info)
 		double pi = 3.14159265;
 		//cout << "targetX:" << targetX << " targetY:" << targetY << endl;
 		//cout << "myCellX:" << myCell[i].x << " myCellY:" << myCell[i].y << endl;
-		if (targetX != 10000)
+		if (targetX < N + 1)
 		{
-			direction = compute_dir(targetX,targetY,myCell[i].x,myCell[i].y);
+			direction = compute_dir(targetX, targetY, myCell[i].x, myCell[i].y);
 			info.myCommandList.addCommand(Move, myCell[i].id, direction);
 		}
 		else
