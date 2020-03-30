@@ -106,43 +106,43 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, ar + r)) return -2;
+		if (Judis(p1, p2, p3, ar)) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
 		double x = t.sx, y = t.sy;
 		double ar = t.sr;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, ar + r)) return i;
+		if (Judis(p1, p2, p3, ar+r)) return i;
 	}
 	return -1;
 }
-int compute_dir(double tx, double ty, double sx, double sy,double r=-1) {//算绕路就加r，是自己的半径
+int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//算绕路就加r，是自己的半径
 	double dx = tx - sx;
 	double dy = ty - sy;
 	double pi = 3.14159265;
 	int spike = -1;
 	for (int i = 0; i < globalInfo->spikyballInfo.size(); ++i) {
-		if(r==-1) break;
+		if (r == -1) break;
 		auto& t = globalInfo->spikyballInfo[i];
 		double x = t.sx, y = t.sy;
 		double ar = t.sr;
 		auto p3 = make_pair(x, y);
 		auto p1 = make_pair(sx, sy);
 		auto p2 = make_pair(tx, ty);
-		if (Judis(p1, p2, p3, ar+r)){// find nearest spike
-			if(spike == -1)
+		if (Judis(p1, p2, p3, ar + r)) {// find nearest spike
+			if (spike == -1)
 				spike = i;
-			else{
-				if(dist(sx,sy,globalInfo->spikyballInfo[spike].sx,globalInfo->spikyballInfo[spike].sy)
-					-globalInfo->spikyballInfo[spike].sr>
-					dist(sx,sy,x,y)-ar)
+			else {
+				if (dist(sx, sy, globalInfo->spikyballInfo[spike].sx, globalInfo->spikyballInfo[spike].sy)
+					- globalInfo->spikyballInfo[spike].sr >
+					dist(sx, sy, x, y) - ar)
 					spike = i;
 			}
 		}
 	}
 	int direction = (int)(atan2(dy, dx) / pi * 180 + 360) % 360;
-	if(spike!=-1){
+	if (spike != -1) {
 		direction += 90;
 	}
 	return direction;
@@ -271,9 +271,16 @@ void player_ai(Info& info)
 				}
 				else {
 					//cout << "追近的营养物质" << endl;
-					vis[nutrient_idx[0]] = true;
-					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
-					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
+					if (dc0 < 10000 && info.round>200) {
+						targetX = info.cellInfo[cell_idx[i0]].x;
+						targetY = info.cellInfo[cell_idx[i0]].y;
+					}
+					else {
+						vis[nutrient_idx[0]] = true;
+						targetX = info.nutrientInfo[nutrient_idx[0]].nux;
+						targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
+					}
+
 				}
 			}
 			else if (dc1 < dn0) {
@@ -303,16 +310,16 @@ void player_ai(Info& info)
 		else {
 			if (targetX < N + 1)
 			{
-				direction = compute_dir(targetX, targetY, myCell[i].x, myCell[i].y,myCell[i].r);
+				direction = compute_dir(targetX, targetY, myCell[i].x, myCell[i].y, myCell[i].r);
 				info.myCommandList.addCommand(Move, myCell[i].id, direction);
 			}
 			else
 			{
-				for(double i=0;i<360;i+=1){
-					double dx = cos(i/360*2*pi)*N;
-					double dy = sin(i/360*2*pi)*N;
-					if(safe(info,myCell[i].x,myCell[i].y,myCell[i].r,myCell[i].x+dx,myCell[i].y+dy)){
-						direction = compute_dir(myCell[i].x+dx, myCell[i].y+dy, myCell[i].x, myCell[i].y,myCell[i].r);
+				for (double i = 0; i < 360; i += 1) {
+					double dx = cos(i / 360 * 2 * pi) * N;
+					double dy = sin(i / 360 * 2 * pi) * N;
+					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, myCell[i].x + dx, myCell[i].y + dy)==-1) {
+						direction = compute_dir(myCell[i].x + dx, myCell[i].y + dy, myCell[i].x, myCell[i].y, myCell[i].r);
 						info.myCommandList.addCommand(Move, myCell[i].id, direction);
 						break;
 					}
