@@ -106,14 +106,14 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, ar)) return -2;
+		if (Judis(p1, p2, p3, r + ar)) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
 		double x = t.sx, y = t.sy;
 		double ar = t.sr;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, ar+r)) return i;
+		if (Judis(p1, p2, p3, ar + r)) return i;
 	}
 	return -1;
 }
@@ -262,7 +262,7 @@ void player_ai(Info& info)
 			if (dn1 < dc0) {
 				//最近的两个是营养物质
 				//cout << "两个营养物质" << endl;
-				if (dn1 - dn0 < dd && myCell.size() < 6 && myCell[i].r > sqrt(2) * MINR && info.round < 100) {
+				if (dn1 - dn0 < dd && myCell.size() < 6 && myCell[i].r > sqrt(2) * MINR && info.round < 150) {
 					//int dir0 = compute_dir(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
 					int dir1 = compute_dir(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy);
 					info.myCommandList.addCommand(Division, myCell[i].id, dir1);
@@ -303,7 +303,7 @@ void player_ai(Info& info)
 		double pi = 3.14159265;
 		//cout << "targetX:" << targetX << " targetY:" << targetY << endl;
 		//cout << "myCellX:" << myCell[i].x << " myCellY:" << myCell[i].y << endl;
-		if (info.round > 800) {
+		if (info.round > 800 && i == maxCell) {
 			direction = compute_dir(150, 150, myCell[i].x, myCell[i].y);
 			info.myCommandList.addCommand(Move, myCell[i].id, direction);
 		}
@@ -318,7 +318,7 @@ void player_ai(Info& info)
 				for (double i = 0; i < 360; i += 1) {
 					double dx = cos(i / 360 * 2 * pi) * N;
 					double dy = sin(i / 360 * 2 * pi) * N;
-					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, myCell[i].x + dx, myCell[i].y + dy)==-1) {
+					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, myCell[i].x + dx, myCell[i].y + dy) == -1) {
 						direction = compute_dir(myCell[i].x + dx, myCell[i].y + dy, myCell[i].x, myCell[i].y, myCell[i].r);
 						info.myCommandList.addCommand(Move, myCell[i].id, direction);
 						break;
