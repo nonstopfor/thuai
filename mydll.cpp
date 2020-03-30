@@ -36,7 +36,7 @@ double distCell(CellInfo c1, CellInfo c2, bool removeRadius = false) {
 	return distRaw;
 }
 
-double MINBOUND = 0.32;
+double MINBOUND = 0.1;
 double MAXDIST = 425;
 double DISTFACTOR = 1.1;
 int DISASTERROUND = 700;
