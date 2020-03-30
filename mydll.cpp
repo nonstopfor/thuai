@@ -230,10 +230,10 @@ void player_ai(Info& info)
 	if (nearestEnemy >= info.cellInfo.size()) return;
 
 	vector<bool>vis(info.nutrientInfo.size(), false);
-	for (int cur = 0; cur < myCell.size(); i++)
+	for (int cur = 0; cur < myCell.size(); cur++)
 	{
         CellInfo& curCell = myCell[cur];
-		int split = splitCheck(myCell, maxCell, i, info.round, info.cellInfo[nearestEnemy]);
+		int split = splitCheck(myCell, maxCell, cur, info.round, info.cellInfo[nearestEnemy]);
 		double targetX = 10000, targetY = 10000;
 		if (split != -1) {
 			targetX = myCell[split].x;
@@ -381,7 +381,7 @@ void player_ai(Info& info)
 		double pi = 3.14159265;
 		//cout << "targetX:" << targetX << " targetY:" << targetY << endl;
 		//cout << "myCellX:" << curCell.x << " myCellY:" << curCell.y << endl;
-		if (info.round > 800 && i == maxCell) {
+		if (info.round > 800 && cur == maxCell) {
 			int nearest = -1;//最近敌人id
 			for (int k = 0; k < info.cellInfo.size(); k++) {
 				if (info.cellInfo[k].ownerid == myID) continue;
