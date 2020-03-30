@@ -307,11 +307,6 @@ void player_ai(Info& info)
 				double g1 = gain_nutrient(curCell, info.nutrientInfo[a]);
 				double g2 = gain_nutrient(curCell, info.nutrientInfo[b]);
 				return g1 > g2;
-				/*
-				double d1 = dist(curCell.x, curCell.y, info.nutrientInfo[a].nux, info.nutrientInfo[a].nuy);
-				double d2 = dist(curCell.x, curCell.y, info.nutrientInfo[b].nux, info.nutrientInfo[b].nuy);
-				return d1 < d2;
-				*/
 				});
 			vector<int>cell_idx;//将其他小细胞按平均收益排序
 			for (int j = 0; j < info.cellInfo.size(); ++j) {
@@ -332,11 +327,6 @@ void player_ai(Info& info)
 				double g1 = gain_cell(curCell, info.cellInfo[a]);
 				double g2 = gain_cell(curCell, info.cellInfo[b]);
 				return g1 > g2;
-				/*
-				double d1 = dist(curCell.x, curCell.y, info.cellInfo[a].x, info.cellInfo[a].y);
-				double d2 = dist(curCell.x, curCell.y, info.cellInfo[b].x, info.cellInfo[b].y);
-				return d1 < d2;
-				*/
 				});
 			double gmax = -1;
 			if (cell_idx.empty() && nutrient_idx.empty()) {
@@ -374,62 +364,11 @@ void player_ai(Info& info)
 
 			}
 
-			/*
-			double dn0 = 10000, dn1 = 10000, dc0 = 10000, dc1 = 10000;
-			if (nutrient_idx.size() >= 2) dn1 = dist(curCell.x, curCell.y, info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy);
-			if (nutrient_idx.size() >= 1) dn0 = dist(curCell.x, curCell.y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
-			int i0 = 0;
-			while (i0 < cell_idx.size() && !catchable(curCell, info.cellInfo[cell_idx[i0]])) ++i0;
-			int i1 = i0 + 1;
-			while (i1 < cell_idx.size() && !catchable(curCell, info.cellInfo[cell_idx[i1]])) ++i1;
-
-			if (i1 < cell_idx.size()) dc1 = dist(curCell.x, curCell.y, info.cellInfo[cell_idx[i1]].x, info.cellInfo[cell_idx[i1]].y);
-			if (i0 < cell_idx.size()) dc0 = dist(curCell.x, curCell.y, info.cellInfo[cell_idx[i0]].x, info.cellInfo[cell_idx[i0]].y);
-			double dd = 20;//距离差的阙值
-			if (dn1 < dc0) {
-				//最近的两个是营养物质
-				//cout << "两个营养物质" << endl;
-				if (dn1 - dn0 < dd && myCell.size() < 6 && curCell.r > sqrt(2) * MINR && info.round < 150) {
-					//int dir0 = compute_dir(curCell.x, curCell.y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
-					int dir1 = compute_dir(curCell.x, curCell.y, info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy);
-					info.myCommandList.addCommand(Division, curCell.id, dir1);
-					//cout << "分裂" << endl;
-					continue;
-				}
-				else {
-					//cout << "追近的营养物质" << endl;
-					if (dc0 < 10000 && info.round>200) {
-						targetX = info.cellInfo[cell_idx[i0]].x;
-						targetY = info.cellInfo[cell_idx[i0]].y;
-					}
-					else {
-						vis[nutrient_idx[0]] = true;
-						targetX = info.nutrientInfo[nutrient_idx[0]].nux;
-						targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
-					}
-
-				}
-			}
-			else if (dc1 < dn0) {
-				//最近的两个是细胞
-				targetX = info.cellInfo[cell_idx[i0]].x;
-				targetY = info.cellInfo[cell_idx[i0]].y;
-			}
-			else {
-				//最近的两个，一个是细胞，一个是营养物质
-				//由于细胞可追，故优先追细胞
-				if (i0 < cell_idx.size()) {
-					targetX = info.cellInfo[cell_idx[i0]].x;
-					targetY = info.cellInfo[cell_idx[i0]].y;
-				}
-
-			}
-			*/
+			
 		}
 		int direction = 0;
 		double pi = 3.14159265;
-		//cout << "targetX:" << targetX << " targetY:" << targetY << endl;
-		//cout << "myCellX:" << curCell.x << " myCellY:" << curCell.y << endl;
+
 		if (info.round > 800 && cur == maxCell) {
 			int nearest = -1;//最近敌人id
 			for (int k = 0; k < info.cellInfo.size(); k++) {
