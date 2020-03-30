@@ -439,7 +439,7 @@ void player_ai(Info& info)
 				else if (distCell(curCell, info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
 					nearest = k;
 			}
-			if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 0.5 * curCell.r) {
+			if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
 				direction = compute_dir(curCell.x, curCell.y,
 					info.cellInfo[nearest].x, info.cellInfo[nearest].y);
 				info.myCommandList.addCommand(Move, curCell.id, direction);
@@ -472,8 +472,8 @@ void player_ai(Info& info)
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
 
 					//开始判断撞边
-					double predictX = curCell.x + (maxSpeed(curCell) + curCell.r) * cos(direction / 360 * 2 * pi);
-					double predictY = curCell.y + (maxSpeed(curCell) + curCell.r) * sin(direction / 360 * 2 * pi);
+					double predictX = curCell.x + (maxSpeed(curCell) + curCell.r) * cos((double)direction / 360 * 2 * pi);
+					double predictY = curCell.y + (maxSpeed(curCell) + curCell.r) * sin((double)direction / 360 * 2 * pi);
 					if (predictX <= 0) {
 						if (direction < 180) direction = 180 - direction;
 						else if (direction > 180) direction = 540 - direction;
