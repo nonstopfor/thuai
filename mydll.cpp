@@ -200,6 +200,31 @@ bool catchable(CellInfo me, CellInfo enemy) {
 	return reach > 0;
 }
 
+vector<int>getdangeridx(Info& info) {
+	vector<int>res;
+	TPlayerID myID = info.myID;
+	for (int i = 0; i < info.cellInfo.size(); ++i) {
+		if (info.cellInfo[i].ownerid != myID) continue;
+		int nearestEnemy = 0;// index in all cells
+		while (nearestEnemy < info.cellInfo.size() && info.cellInfo[nearestEnemy].ownerid == myID) nearestEnemy++;
+		for (int k = nearestEnemy + 1; k < info.cellInfo.size(); k++) {
+			if (info.cellInfo[k].ownerid == myID) continue;
+			CellInfo& e = info.cellInfo[k];
+			if (distCell(e, info.cellInfo[i], true) < distCell(info.cellInfo[nearestEnemy], info.cellInfo[i], true))
+				nearestEnemy = k;
+		}
+		if (nearestEnemy >= info.cellInfo.size()) continue;
+		double r = info.cellInfo[i].r;
+		double enemyr = info.cellInfo[nearestEnemy].r;
+		double dist2enemy = dist(info.cellInfo[i].x, info.cellInfo[i].y, info.cellInfo[nearestEnemy].x, info.cellInfo[nearestEnemy].y);
+
+		if (r / enemyr < 0.9 && dist2enemy <= DISTFACTOR * (r + enemyr)) {
+			res.push_back(i);
+		}
+	}
+	return res;
+}
+
 
 
 void player_ai(Info& info)
@@ -230,10 +255,13 @@ void player_ai(Info& info)
 	if (nearestEnemy >= info.cellInfo.size()) return;
 
 	vector<bool>vis(info.nutrientInfo.size(), false);
+	vector<int>dangercell_idx = getdangeridx(info);
+
 	for (int cur = 0; cur < myCell.size(); cur++)
 	{
-        CellInfo& curCell = myCell[cur];
-		int split = splitCheck(myCell, maxCell, cur, info.round, info.cellInfo[nearestEnemy]);
+		CellInfo& curCell = myCell[cur];
+		int split = splitCheck(myCell, maxCell, dangercell_idx, cur, info.round);
+		//int split = splitCheck(myCell, maxCell, cur, info.round, info.cellInfo[nearestEnemy]);
 		double targetX = 10000, targetY = 10000;
 		if (split != -1) {
 			targetX = myCell[split].x;
