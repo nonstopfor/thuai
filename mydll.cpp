@@ -24,6 +24,10 @@ info.myCommandList.addCommand(Spit,aim_cell_id,direction);//吞吐命令，第�
 */
 
 
+double maxSpeed(CellInfo& cell) {
+	return 20 / cell.r;
+}
+
 double dist(double x1, double y1, double x2, double y2) {
 	double deltaX = x1 - x2;
 	double deltaY = y1 - y2;
@@ -422,6 +426,31 @@ void player_ai(Info& info)
 				if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 0.5 * curCell.r) {
 					direction = compute_dir(curCell.x, curCell.y,
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
+
+					//开始判断撞边
+					double predictX = curCell.x + (maxSpeed(curCell) + curCell.r) * cos(direction / 360 * 2 * pi);
+					double predictY = curCell.y + (maxSpeed(curCell) + curCell.r) * sin(direction / 360 * 2 * pi);
+					if (predictX <= 0) {
+						if (direction < 180) direction = 180 - direction;
+						else if (direction > 180) direction = 540 - direction;
+						else direction = 90;
+					}
+					else if (predictX >= N) {
+						if (direction < 180) direction = 180 - direction;
+						else if (direction > 180) direction = 540 - direction;
+						else direction = 90;
+					}
+					else if (predictY <= 0) {
+						if (direction < 270) direction = 360 - direction;
+						else if (direction > 270) direction = 360 - direction;
+						else direction = 0;
+					}
+					else if (predictY >= N) {
+						if (direction < 90) direction = 360 - direction;
+						else if (direction > 90) direction = 360 - direction;
+						else direction = 0;
+					}
+
 					info.myCommandList.addCommand(Move, curCell.id, direction);
 				}
 				else {
