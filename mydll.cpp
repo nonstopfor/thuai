@@ -113,8 +113,9 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		auto& t = info.spikyballInfo[i];
 		double x = t.sx, y = t.sy;
 		double ar = t.sr;
+		if (ar >= r) continue;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, ar + r)) return i;
+		if (Judis(p1, p2, p3, 1.1 * ar + r)) return i;
 	}
 	return -1;
 }
@@ -149,7 +150,7 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//算
 	return direction;
 }
 
-bool catchable(CellInfo me, CellInfo enemy) {
+double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
 	double distance = dist(me.x, me.y, enemy.x, enemy.y);
 	distance = distance - 2.0 / 3.0 * me.r;
 	double dist_hat_dir = compute_dir(enemy.x, enemy.y, me.x, me.y);
@@ -159,10 +160,16 @@ bool catchable(CellInfo me, CellInfo enemy) {
 		myTop = 20 / me.r;
 	double t = (myTop - mySpeed) / myAcc,
 		t_limit = (myTop - enemySpeed) / enAcc;
+	if (time) {
+		double v_0 = mySpeed - enemySpeed, a = myAcc - enAcc;
+		double delta = v_0 * v_0 + 2 * a * distance;
+		if (delta < 0) return -1;
+		return (-v_0 + sqrt(delta)) / a;
+	}
 	if (t >= t_limit) {
 		double runDist = (mySpeed - enemySpeed) * t_limit +
 			0.5 * (myAcc - enAcc) * t_limit * t_limit;
-		return runDist > distance;
+		return runDist - distance;
 	}
 	else {
 		double deltaT = t_limit - t;
@@ -170,8 +177,11 @@ bool catchable(CellInfo me, CellInfo enemy) {
 			0.5 * (myAcc - enAcc) * t * t +
 			(myTop - enemySpeed - enAcc * t) * deltaT -
 			0.5 * enAcc * deltaT * deltaT;
-		return runDist > distance;
+		return runDist - distance;
 	}
+}
+double timeConsume(CellInfo me, CellInfo enemy) {
+	return distAndTime(me, enemy, true);
 }
 
 double gain_nutrient(CellInfo& mycell, NutrientInfo& nut) {
@@ -183,6 +193,13 @@ double gain_cell(CellInfo& mycell, CellInfo& enemy) {
 	//double d = dist(mycell.x, mycell.y, enemy.x, enemy.y) - mycell.r * 2 / 3;
 	return (PI * enemy.r * enemy.r + 500) / timeConsume(mycell, enemy);
 }
+
+bool catchable(CellInfo me, CellInfo enemy) {
+	double reach = distAndTime(me, enemy);
+	return reach > 0;
+}
+
+
 
 void player_ai(Info& info)
 {
@@ -276,11 +293,13 @@ void player_ai(Info& info)
 			}
 			else if (cell_idx.empty()) {
 				if (nutrient_idx.size() >= 2 && myCell.size() < 6 && myCell[i].r > sqrt(2) * MINR && info.round < 150) {
-					int dir0 = compute_dir(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
-					info.myCommandList.addCommand(Division, myCell[i].id, dir0);
+					int dir1 = compute_dir(info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy, myCell[i].x, myCell[i].y);
+					info.myCommandList.addCommand(Division, myCell[i].id, dir1);
 					continue;
 				}
 				else {
+					vis[nutrient_idx[0]] = true;
+
 					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
 					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
 
@@ -296,6 +315,7 @@ void player_ai(Info& info)
 					targetY = info.cellInfo[cell_idx[0]].y;
 				}
 				else {
+					vis[nutrient_idx[0]] = true;
 					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
 					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
 
@@ -360,8 +380,24 @@ void player_ai(Info& info)
 		//cout << "targetX:" << targetX << " targetY:" << targetY << endl;
 		//cout << "myCellX:" << myCell[i].x << " myCellY:" << myCell[i].y << endl;
 		if (info.round > 800 && i == maxCell) {
-			direction = compute_dir(150, 150, myCell[i].x, myCell[i].y);
-			info.myCommandList.addCommand(Move, myCell[i].id, direction);
+			int nearest = -1;//最近敌人id
+			for (int k = 0; k < info.cellInfo.size(); k++) {
+				if (info.cellInfo[k].ownerid == myID) continue;
+				if (info.cellInfo[k].r * 0.9 <= myCell[i].r) continue;
+				if (nearest == -1) nearest = k;
+				else if (distCell(myCell[i], info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
+					nearest = k;
+			}
+			if (distCell(myCell[i], info.cellInfo[nearest], true) < 0.5 * myCell[i].r) {
+				direction = compute_dir(myCell[i].x, myCell[i].y,
+					info.cellInfo[nearest].x, info.cellInfo[nearest].y);
+				info.myCommandList.addCommand(Move, myCell[i].id, direction);
+			}
+			else {
+				direction = compute_dir(150, 150, myCell[i].x, myCell[i].y);
+				info.myCommandList.addCommand(Move, myCell[i].id, direction);
+			}
+
 		}
 		else {
 			if (targetX < N + 1)
@@ -371,13 +407,29 @@ void player_ai(Info& info)
 			}
 			else
 			{
-				for (double i = 0; i < 360; i += 1) {
-					double dx = cos(i / 360 * 2 * pi) * N;
-					double dy = sin(i / 360 * 2 * pi) * N;
-					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, myCell[i].x + dx, myCell[i].y + dy) == -1) {
-						direction = compute_dir(myCell[i].x + dx, myCell[i].y + dy, myCell[i].x, myCell[i].y, myCell[i].r);
-						info.myCommandList.addCommand(Move, myCell[i].id, direction);
-						break;
+				// check if enemy too near
+				int nearest = -1;//最近敌人id
+				for (int k = 0; k < info.cellInfo.size(); k++) {
+					if (info.cellInfo[k].ownerid == myID) continue;
+					if (info.cellInfo[k].r * 0.9 <= myCell[i].r) continue;
+					if (nearest == -1) nearest = k;
+					else if (distCell(myCell[i], info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
+						nearest = k;
+				}
+				if (distCell(myCell[i], info.cellInfo[nearest], true) < 0.5 * myCell[i].r) {
+					direction = compute_dir(myCell[i].x, myCell[i].y,
+						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
+					info.myCommandList.addCommand(Move, myCell[i].id, direction);
+				}
+				else {
+					for (double i = 0; i < 360; i += 1) {
+						double dx = cos(i / 360 * 2 * pi) * N;
+						double dy = sin(i / 360 * 2 * pi) * N;
+						if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, myCell[i].x + dx, myCell[i].y + dy) == -1) {
+							direction = compute_dir(myCell[i].x + dx, myCell[i].y + dy, myCell[i].x, myCell[i].y, myCell[i].r);
+							info.myCommandList.addCommand(Move, myCell[i].id, direction);
+							break;
+						}
 					}
 				}
 			}
