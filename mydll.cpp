@@ -148,7 +148,7 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//À„
 	return direction;
 }
 
-bool catchable(CellInfo me, CellInfo enemy) {
+double distAndTime(CellInfo me, CellInfo enemy, bool time=false) {
 	double distance = dist(me.x, me.y, enemy.x, enemy.y);
 	distance = distance - 2.0 / 3.0 * me.r;
 	double dist_hat_dir = compute_dir(enemy.x, enemy.y, me.x, me.y);
@@ -158,10 +158,16 @@ bool catchable(CellInfo me, CellInfo enemy) {
 		myTop = 20 / me.r;
 	double t = (myTop - mySpeed) / myAcc,
 		t_limit = (myTop - enemySpeed) / enAcc;
+	if (time) {
+		double v_0 = mySpeed - enemySpeed, a = myAcc - enAcc;
+		double delta = v_0*v_0 + 2*a*distance;
+		if (delta < 0) return -1; 
+		return (-v_0 + sqrt(delta)) / a;
+	}
 	if (t >= t_limit) {
 		double runDist = (mySpeed - enemySpeed) * t_limit +
 			0.5 * (myAcc - enAcc) * t_limit * t_limit;
-		return runDist > distance;
+		return runDist - distance;
 	}
 	else {
 		double deltaT = t_limit - t;
@@ -169,8 +175,17 @@ bool catchable(CellInfo me, CellInfo enemy) {
 			0.5 * (myAcc - enAcc) * t * t +
 			(myTop - enemySpeed - enAcc * t) * deltaT -
 			0.5 * enAcc * deltaT * deltaT;
-		return runDist > distance;
+		return runDist - distance;
 	}
+}
+
+bool catchable(CellInfo me, CellInfo enemy) {
+	double reach = distAndTime(me, enemy);
+	return reach > 0;
+}
+
+double timeConsume(CellInfo me, CellInfo enemy) {
+	return distAndTime(me, enemy, true);
 }
 
 void player_ai(Info& info)
