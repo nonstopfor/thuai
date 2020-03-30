@@ -12,15 +12,15 @@ using namespace std;
 #define NI 19991
 const double N = 300;
 const double MINR = 6;
-const double lam = 0.9;//Ğ¡Ï¸°ûÓë´óÏ¸°û°ë¾¶±ÈÖµĞ¡ÓÚÕâ¸öÊ±±»ÍÌÊÉ
+const double lam = 0.9;//å°ç»†èƒä¸å¤§ç»†èƒåŠå¾„æ¯”å€¼å°äºè¿™ä¸ªæ—¶è¢«åå™¬
 double PI = 3.14159265;
 Info* globalInfo;
 typedef pair<double, double> PAIR;
 /*
-»ù±¾µÄÈı¸öÌí¼ÓÖ¸ÁîµÄÃüÁî
-info.myCommandList.addCommand(Division,aim_cell_id,direction);//·ÖÁÑÃüÁî£¬µÚ¶ş¸ö²ÎÊıÊÇ·ÖÁÑ·½Ïò
-info.myCommandList.addCommand(Move,aim_cell_id,direction);//ÒÆ¶¯ÃüÁî£¬µÚ¶ş¸ö²ÎÊıÊÇÒÆ¶¯·½Ïò
-info.myCommandList.addCommand(Spit,aim_cell_id,direction);//ÍÌÍÂÃüÁî£¬µÚ¶ş¸ö²ÎÊıÊÇÍÌÍÂ·½Ïò
+åŸºæœ¬çš„ä¸‰ä¸ªæ·»åŠ æŒ‡ä»¤çš„å‘½ä»¤
+info.myCommandList.addCommand(Division,aim_cell_id,direction);//åˆ†è£‚å‘½ä»¤ï¼Œç¬¬äºŒä¸ªå‚æ•°æ˜¯åˆ†è£‚æ–¹å‘
+info.myCommandList.addCommand(Move,aim_cell_id,direction);//ç§»åŠ¨å‘½ä»¤ï¼Œç¬¬äºŒä¸ªå‚æ•°æ˜¯ç§»åŠ¨æ–¹å‘
+info.myCommandList.addCommand(Spit,aim_cell_id,direction);//ååå‘½ä»¤ï¼Œç¬¬äºŒä¸ªå‚æ•°æ˜¯ååæ–¹å‘
 */
 
 
@@ -85,17 +85,17 @@ bool Judis(PAIR P1, PAIR P2, PAIR yuan, double R) {
 	dist1 = A * yuan.first + B * yuan.second + C;
 	dist1 *= dist1;
 	dist2 = (A * A + B * B) * R * R;
-	if (dist1 > dist2) return false;//µãµ½Ö±Ïß¾àÀë´óÓÚ°ë¾¶r  ²»Ïà½»
+	if (dist1 > dist2) return false;//ç‚¹åˆ°ç›´çº¿è·ç¦»å¤§äºåŠå¾„r  ä¸ç›¸äº¤
 	angle1 = (yuan.first - P1.first) * (P2.first - P1.first) + (yuan.second - P1.second) * (P2.second - P1.second);
 	angle2 = (yuan.first - P2.first) * (P1.first - P2.first) + (yuan.second - P2.second) * (P1.second - P2.second);
-	if (angle1 > 0 && angle2 > 0) return true;//ÓàÏÒ¶¼ÎªÕı£¬ÔòÊÇÈñ½Ç Ïà½»
-	return false;//²»Ïà½»
+	if (angle1 > 0 && angle2 > 0) return true;//ä½™å¼¦éƒ½ä¸ºæ­£ï¼Œåˆ™æ˜¯é”è§’ ç›¸äº¤
+	return false;//ä¸ç›¸äº¤
 
 }
 int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
-	//-2±íÊ¾Â·¾¶ÉÏÓĞÆäËûÏ¸°û
-	//-1±íÊ¾Â·¾¶°²È«
-	//0-x ±íÊ¾Â·¾¶ÉÏÓĞ´ÌÇò£¬·µ»Ø´ÌÇòidx
+	//-2è¡¨ç¤ºè·¯å¾„ä¸Šæœ‰å…¶ä»–ç»†èƒ
+	//-1è¡¨ç¤ºè·¯å¾„å®‰å…¨
+	//0-x è¡¨ç¤ºè·¯å¾„ä¸Šæœ‰åˆºçƒï¼Œè¿”å›åˆºçƒidx
 	TPlayerID myID = info.myID;
 	auto p1 = make_pair(x1, y1);
 	auto p2 = make_pair(x2, y2);
@@ -119,7 +119,7 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 	}
 	return -1;
 }
-int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//ËãÈÆÂ·¾Í¼Ór£¬ÊÇ×Ô¼ºµÄ°ë¾¶
+int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//ç®—ç»•è·¯å°±åŠ rï¼Œæ˜¯è‡ªå·±çš„åŠå¾„
 	double dx = tx - sx;
 	double dy = ty - sy;
 	double pi = 3.14159265;
@@ -186,7 +186,7 @@ double timeConsume(CellInfo me, CellInfo enemy) {
 }
 
 double gain_nutrient(CellInfo& mycell, NutrientInfo& nut) {
-	//³ÔÓªÑøÎïÖÊµÄÊÕÒæ
+	//åƒè¥å…»ç‰©è´¨çš„æ”¶ç›Š
 	double d = dist(mycell.x, mycell.y, nut.nux, nut.nuy) - mycell.r * 2 / 3;
 	return PI * nut.nur * nut.nur / (d / 20 * mycell.r);
 }
@@ -230,8 +230,9 @@ void player_ai(Info& info)
 	if (nearestEnemy >= info.cellInfo.size()) return;
 
 	vector<bool>vis(info.nutrientInfo.size(), false);
-	for (int i = 0; i < myCell.size(); i++)
+	for (int cur = 0; cur < myCell.size(); i++)
 	{
+        CellInfo& curCell = myCell[cur];
 		int split = splitCheck(myCell, maxCell, i, info.round, info.cellInfo[nearestEnemy]);
 		double targetX = 10000, targetY = 10000;
 		if (split != -1) {
@@ -239,52 +240,52 @@ void player_ai(Info& info)
 			targetY = myCell[split].y;
 		}
 		else {
-			vector<int>nutrient_idx;//½«ÓªÑøÎïÖÊ°´Æ½¾ùÊÕÒæ´óĞ¡ÅÅĞò
+			vector<int>nutrient_idx;//å°†è¥å…»ç‰©è´¨æŒ‰å¹³å‡æ”¶ç›Šå¤§å°æ’åº
 
 			for (int j = 0; j < info.nutrientInfo.size(); ++j) {
 				if (vis[j]) continue;
 				auto& k = info.nutrientInfo[j];
 				double t = 1 - sqrt(2) / 3;
-				if (min(abs(k.nux), abs(N - k.nux)) <= myCell[i].r * t) continue;
-				if (min(abs(k.nuy), abs(N - k.nuy)) <= myCell[i].r * t) continue;
-				int w = safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.nux, k.nuy);
+				if (min(abs(k.nux), abs(N - k.nux)) <= curCell.r * t) continue;
+				if (min(abs(k.nuy), abs(N - k.nuy)) <= curCell.r * t) continue;
+				int w = safe(info, curCell.x, curCell.y, curCell.r, k.nux, k.nuy);
 				if (w != -2) {
-					//Èç¹û²»ÊÇÂ·¾¶ÉÏÓĞÆäËûÏ¸°û
+					//å¦‚æœä¸æ˜¯è·¯å¾„ä¸Šæœ‰å…¶ä»–ç»†èƒ
 					nutrient_idx.push_back(j);
 				}
 			}
 			sort(nutrient_idx.begin(), nutrient_idx.end(), [&](int a, int b) {
-				double g1 = gain_nutrient(myCell[i], info.nutrientInfo[a]);
-				double g2 = gain_nutrient(myCell[i], info.nutrientInfo[b]);
+				double g1 = gain_nutrient(curCell, info.nutrientInfo[a]);
+				double g2 = gain_nutrient(curCell, info.nutrientInfo[b]);
 				return g1 > g2;
 				/*
-				double d1 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[a].nux, info.nutrientInfo[a].nuy);
-				double d2 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[b].nux, info.nutrientInfo[b].nuy);
+				double d1 = dist(curCell.x, curCell.y, info.nutrientInfo[a].nux, info.nutrientInfo[a].nuy);
+				double d2 = dist(curCell.x, curCell.y, info.nutrientInfo[b].nux, info.nutrientInfo[b].nuy);
 				return d1 < d2;
 				*/
 				});
-			vector<int>cell_idx;//½«ÆäËûĞ¡Ï¸°û°´Æ½¾ùÊÕÒæÅÅĞò
+			vector<int>cell_idx;//å°†å…¶ä»–å°ç»†èƒæŒ‰å¹³å‡æ”¶ç›Šæ’åº
 			for (int j = 0; j < info.cellInfo.size(); ++j) {
 				auto& k = info.cellInfo[j];
 				if (k.ownerid == myID) continue;
-				if (k.r >= myCell[i].r * lam) continue;
+				if (k.r >= curCell.r * lam) continue;
 				double t = 1 - sqrt(2) / 3;
-				if (min(abs(k.x), abs(N - k.x)) <= myCell[i].r * t) continue;
-				if (min(abs(k.y), abs(N - k.y)) <= myCell[i].r * t) continue;
-				if (!catchable(myCell[i], info.cellInfo[j])) continue;
-				int w = safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.x, k.y);
+				if (min(abs(k.x), abs(N - k.x)) <= curCell.r * t) continue;
+				if (min(abs(k.y), abs(N - k.y)) <= curCell.r * t) continue;
+				if (!catchable(curCell, info.cellInfo[j])) continue;
+				int w = safe(info, curCell.x, curCell.y, curCell.r, k.x, k.y);
 				if (w != -2) {
-					//Èç¹û²»ÊÇÂ·¾¶ÉÏÓĞÆäËûÏ¸°û
+					//å¦‚æœä¸æ˜¯è·¯å¾„ä¸Šæœ‰å…¶ä»–ç»†èƒ
 					cell_idx.push_back(j);
 				}
 			}
 			sort(cell_idx.begin(), cell_idx.end(), [&](int a, int b) {
-				double g1 = gain_cell(myCell[i], info.cellInfo[a]);
-				double g2 = gain_cell(myCell[i], info.cellInfo[b]);
+				double g1 = gain_cell(curCell, info.cellInfo[a]);
+				double g2 = gain_cell(curCell, info.cellInfo[b]);
 				return g1 > g2;
 				/*
-				double d1 = dist(myCell[i].x, myCell[i].y, info.cellInfo[a].x, info.cellInfo[a].y);
-				double d2 = dist(myCell[i].x, myCell[i].y, info.cellInfo[b].x, info.cellInfo[b].y);
+				double d1 = dist(curCell.x, curCell.y, info.cellInfo[a].x, info.cellInfo[a].y);
+				double d2 = dist(curCell.x, curCell.y, info.cellInfo[b].x, info.cellInfo[b].y);
 				return d1 < d2;
 				*/
 				});
@@ -293,9 +294,9 @@ void player_ai(Info& info)
 
 			}
 			else if (cell_idx.empty()) {
-				if (nutrient_idx.size() >= 2 && myCell.size() < 6 && myCell[i].r > sqrt(2) * MINR && info.round < 150) {
-					int dir1 = compute_dir(info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy, myCell[i].x, myCell[i].y);
-					info.myCommandList.addCommand(Division, myCell[i].id, dir1);
+				if (nutrient_idx.size() >= 2 && myCell.size() < 6 && curCell.r > sqrt(2) * MINR && info.round < 150) {
+					int dir1 = compute_dir(info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy, curCell.x, curCell.y);
+					info.myCommandList.addCommand(Division, curCell.id, dir1);
 					continue;
 				}
 				else {
@@ -311,7 +312,7 @@ void player_ai(Info& info)
 				targetY = info.cellInfo[cell_idx[0]].y;
 			}
 			else {
-				if (gain_cell(myCell[i], info.cellInfo[cell_idx[0]]) > gain_nutrient(myCell[i], info.nutrientInfo[nutrient_idx[0]])) {
+				if (gain_cell(curCell, info.cellInfo[cell_idx[0]]) > gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]])) {
 					targetX = info.cellInfo[cell_idx[0]].x;
 					targetY = info.cellInfo[cell_idx[0]].y;
 				}
@@ -326,28 +327,28 @@ void player_ai(Info& info)
 
 			/*
 			double dn0 = 10000, dn1 = 10000, dc0 = 10000, dc1 = 10000;
-			if (nutrient_idx.size() >= 2) dn1 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy);
-			if (nutrient_idx.size() >= 1) dn0 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
+			if (nutrient_idx.size() >= 2) dn1 = dist(curCell.x, curCell.y, info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy);
+			if (nutrient_idx.size() >= 1) dn0 = dist(curCell.x, curCell.y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
 			int i0 = 0;
-			while (i0 < cell_idx.size() && !catchable(myCell[i], info.cellInfo[cell_idx[i0]])) ++i0;
+			while (i0 < cell_idx.size() && !catchable(curCell, info.cellInfo[cell_idx[i0]])) ++i0;
 			int i1 = i0 + 1;
-			while (i1 < cell_idx.size() && !catchable(myCell[i], info.cellInfo[cell_idx[i1]])) ++i1;
+			while (i1 < cell_idx.size() && !catchable(curCell, info.cellInfo[cell_idx[i1]])) ++i1;
 
-			if (i1 < cell_idx.size()) dc1 = dist(myCell[i].x, myCell[i].y, info.cellInfo[cell_idx[i1]].x, info.cellInfo[cell_idx[i1]].y);
-			if (i0 < cell_idx.size()) dc0 = dist(myCell[i].x, myCell[i].y, info.cellInfo[cell_idx[i0]].x, info.cellInfo[cell_idx[i0]].y);
-			double dd = 20;//¾àÀë²îµÄãÚÖµ
+			if (i1 < cell_idx.size()) dc1 = dist(curCell.x, curCell.y, info.cellInfo[cell_idx[i1]].x, info.cellInfo[cell_idx[i1]].y);
+			if (i0 < cell_idx.size()) dc0 = dist(curCell.x, curCell.y, info.cellInfo[cell_idx[i0]].x, info.cellInfo[cell_idx[i0]].y);
+			double dd = 20;//è·ç¦»å·®çš„é˜™å€¼
 			if (dn1 < dc0) {
-				//×î½üµÄÁ½¸öÊÇÓªÑøÎïÖÊ
-				//cout << "Á½¸öÓªÑøÎïÖÊ" << endl;
-				if (dn1 - dn0 < dd && myCell.size() < 6 && myCell[i].r > sqrt(2) * MINR && info.round < 150) {
-					//int dir0 = compute_dir(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
-					int dir1 = compute_dir(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy);
-					info.myCommandList.addCommand(Division, myCell[i].id, dir1);
-					//cout << "·ÖÁÑ" << endl;
+				//æœ€è¿‘çš„ä¸¤ä¸ªæ˜¯è¥å…»ç‰©è´¨
+				//cout << "ä¸¤ä¸ªè¥å…»ç‰©è´¨" << endl;
+				if (dn1 - dn0 < dd && myCell.size() < 6 && curCell.r > sqrt(2) * MINR && info.round < 150) {
+					//int dir0 = compute_dir(curCell.x, curCell.y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
+					int dir1 = compute_dir(curCell.x, curCell.y, info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy);
+					info.myCommandList.addCommand(Division, curCell.id, dir1);
+					//cout << "åˆ†è£‚" << endl;
 					continue;
 				}
 				else {
-					//cout << "×·½üµÄÓªÑøÎïÖÊ" << endl;
+					//cout << "è¿½è¿‘çš„è¥å…»ç‰©è´¨" << endl;
 					if (dc0 < 10000 && info.round>200) {
 						targetX = info.cellInfo[cell_idx[i0]].x;
 						targetY = info.cellInfo[cell_idx[i0]].y;
@@ -361,13 +362,13 @@ void player_ai(Info& info)
 				}
 			}
 			else if (dc1 < dn0) {
-				//×î½üµÄÁ½¸öÊÇÏ¸°û
+				//æœ€è¿‘çš„ä¸¤ä¸ªæ˜¯ç»†èƒ
 				targetX = info.cellInfo[cell_idx[i0]].x;
 				targetY = info.cellInfo[cell_idx[i0]].y;
 			}
 			else {
-				//×î½üµÄÁ½¸ö£¬Ò»¸öÊÇÏ¸°û£¬Ò»¸öÊÇÓªÑøÎïÖÊ
-				//ÓÉÓÚÏ¸°û¿É×·£¬¹ÊÓÅÏÈ×·Ï¸°û
+				//æœ€è¿‘çš„ä¸¤ä¸ªï¼Œä¸€ä¸ªæ˜¯ç»†èƒï¼Œä¸€ä¸ªæ˜¯è¥å…»ç‰©è´¨
+				//ç”±äºç»†èƒå¯è¿½ï¼Œæ•…ä¼˜å…ˆè¿½ç»†èƒ
 				if (i0 < cell_idx.size()) {
 					targetX = info.cellInfo[cell_idx[i0]].x;
 					targetY = info.cellInfo[cell_idx[i0]].y;
@@ -379,56 +380,56 @@ void player_ai(Info& info)
 		int direction = 0;
 		double pi = 3.14159265;
 		//cout << "targetX:" << targetX << " targetY:" << targetY << endl;
-		//cout << "myCellX:" << myCell[i].x << " myCellY:" << myCell[i].y << endl;
+		//cout << "myCellX:" << curCell.x << " myCellY:" << curCell.y << endl;
 		if (info.round > 800 && i == maxCell) {
-			int nearest = -1;//×î½üµĞÈËid
+			int nearest = -1;//æœ€è¿‘æ•Œäººid
 			for (int k = 0; k < info.cellInfo.size(); k++) {
 				if (info.cellInfo[k].ownerid == myID) continue;
-				if (info.cellInfo[k].r * 0.9 <= myCell[i].r) continue;
+				if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
 				if (nearest == -1) nearest = k;
-				else if (distCell(myCell[i], info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
+				else if (distCell(curCell, info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
 					nearest = k;
 			}
-			if (nearest != -1 && distCell(myCell[i], info.cellInfo[nearest], true) < 0.5 * myCell[i].r) {
-				direction = compute_dir(myCell[i].x, myCell[i].y,
+			if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 0.5 * curCell.r) {
+				direction = compute_dir(curCell.x, curCell.y,
 					info.cellInfo[nearest].x, info.cellInfo[nearest].y);
-				info.myCommandList.addCommand(Move, myCell[i].id, direction);
+				info.myCommandList.addCommand(Move, curCell.id, direction);
 			}
 			else {
-				direction = compute_dir(150, 150, myCell[i].x, myCell[i].y);
-				info.myCommandList.addCommand(Move, myCell[i].id, direction);
+				direction = compute_dir(150, 150, curCell.x, curCell.y);
+				info.myCommandList.addCommand(Move, curCell.id, direction);
 			}
 
 		}
 		else {
 			if (targetX < N + 1)
 			{
-				direction = compute_dir(targetX, targetY, myCell[i].x, myCell[i].y, myCell[i].r);
-				info.myCommandList.addCommand(Move, myCell[i].id, direction);
+				direction = compute_dir(targetX, targetY, curCell.x, curCell.y, curCell.r);
+				info.myCommandList.addCommand(Move, curCell.id, direction);
 			}
 			else
 			{
 				// check if enemy too near
-				int nearest = -1;//×î½üµĞÈËid
+				int nearest = -1;//æœ€è¿‘æ•Œäººid
 				for (int k = 0; k < info.cellInfo.size(); k++) {
 					if (info.cellInfo[k].ownerid == myID) continue;
-					if (info.cellInfo[k].r * 0.9 <= myCell[i].r) continue;
+					if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
 					if (nearest == -1) nearest = k;
-					else if (distCell(myCell[i], info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
+					else if (distCell(curCell, info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
 						nearest = k;
 				}
-				if (nearest != -1 && distCell(myCell[i], info.cellInfo[nearest], true) < 0.5 * myCell[i].r) {
-					direction = compute_dir(myCell[i].x, myCell[i].y,
+				if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 0.5 * curCell.r) {
+					direction = compute_dir(curCell.x, curCell.y,
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
-					info.myCommandList.addCommand(Move, myCell[i].id, direction);
+					info.myCommandList.addCommand(Move, curCell.id, direction);
 				}
 				else {
-					for (double i = 0; i < 360; i += 1) {
-						double dx = cos(i / 360 * 2 * pi) * N;
-						double dy = sin(i / 360 * 2 * pi) * N;
-						if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, myCell[i].x + dx, myCell[i].y + dy) == -1) {
-							direction = compute_dir(myCell[i].x + dx, myCell[i].y + dy, myCell[i].x, myCell[i].y, myCell[i].r);
-							info.myCommandList.addCommand(Move, myCell[i].id, direction);
+					for (double angle = 0; angle < 360; angle += 1) {
+						double dx = cos(angle / 360 * 2 * pi) * N;
+						double dy = sin(angle / 360 * 2 * pi) * N;
+						if (safe(info, curCell.x, curCell.y, curCell.r, curCell.x + dx, curCell.y + dy) == -1) {
+							direction = compute_dir(curCell.x + dx, curCell.y + dy, curCell.x, curCell.y, curCell.r);
+							info.myCommandList.addCommand(Move, curCell.id, direction);
 							break;
 						}
 					}
