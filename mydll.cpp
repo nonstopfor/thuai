@@ -146,7 +146,7 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//À„
 	int direction = (int)(atan2(dy, dx) / pi * 180 + 360) % 360;
 	if (spike != -1) {
 		direction += 90;
-        direction %= 360;
+		direction %= 360;
 	}
 	return direction;
 }
@@ -389,7 +389,7 @@ void player_ai(Info& info)
 				else if (distCell(myCell[i], info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
 					nearest = k;
 			}
-			if (distCell(myCell[i], info.cellInfo[nearest], true) < 0.5 * myCell[i].r) {
+			if (nearest != -1 && distCell(myCell[i], info.cellInfo[nearest], true) < 0.5 * myCell[i].r) {
 				direction = compute_dir(myCell[i].x, myCell[i].y,
 					info.cellInfo[nearest].x, info.cellInfo[nearest].y);
 				info.myCommandList.addCommand(Move, myCell[i].id, direction);
@@ -417,7 +417,7 @@ void player_ai(Info& info)
 					else if (distCell(myCell[i], info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
 						nearest = k;
 				}
-				if (distCell(myCell[i], info.cellInfo[nearest], true) < 0.5 * myCell[i].r) {
+				if (nearest != -1 && distCell(myCell[i], info.cellInfo[nearest], true) < 0.5 * myCell[i].r) {
 					direction = compute_dir(myCell[i].x, myCell[i].y,
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
 					info.myCommandList.addCommand(Move, myCell[i].id, direction);
