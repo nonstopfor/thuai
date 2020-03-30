@@ -56,6 +56,10 @@ int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cell
 	if (!enemyJudge) {
 		enemyJudge = true;
 		for (int i = 0; i < cellsIndanger.size(); ++i) {
+			if (curCell == cellsIndanger[i]) {
+				enemyJudge = true;
+				break;
+			}
 			CellInfo& tarCell = cells[cellsIndanger[i]];
 			double circleDist = distCell(cells[curCell], tarCell);
 			if (circleDist > HELP_RANGE)
@@ -63,7 +67,6 @@ int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cell
 			else {
 				//found target which needed help
 				enemyJudge = false;
-				break;
 			}
 		}
 		/*double distToEnemy = dist(
