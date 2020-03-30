@@ -245,6 +245,7 @@ void player_ai(Info& info)
 			for (int j = 0; j < info.nutrientInfo.size(); ++j) {
 				if (vis[j]) continue;
 				auto& k = info.nutrientInfo[j];
+				if (k.nur >= curCell.r) continue;
 				double t = 1 - sqrt(2) / 3;
 				if (min(abs(k.nux), abs(N - k.nux)) <= curCell.r * t) continue;
 				if (min(abs(k.nuy), abs(N - k.nuy)) <= curCell.r * t) continue;
