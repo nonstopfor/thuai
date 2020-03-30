@@ -315,13 +315,29 @@ void player_ai(Info& info)
 			}
 			else
 			{
-				for (double i = 0; i < 360; i += 1) {
-					double dx = cos(i / 360 * 2 * pi) * N;
-					double dy = sin(i / 360 * 2 * pi) * N;
-					if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, myCell[i].x + dx, myCell[i].y + dy) == -1) {
-						direction = compute_dir(myCell[i].x + dx, myCell[i].y + dy, myCell[i].x, myCell[i].y, myCell[i].r);
-						info.myCommandList.addCommand(Move, myCell[i].id, direction);
-						break;
+				// check if enemy too near
+				int nearest = -1;//×î½üµÐÈËid
+				for (int k = 0; k < info.cellInfo.size(); k++) {
+					if (info.cellInfo[k].ownerid == myID) continue;
+					if (info.cellInfo[k].r * 0.9 <= myCell[i].r) continue;
+					if (nearest == -1) nearest = k;
+					else if (distCell(myCell[i], info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
+						nearest = k;
+				}
+				if (distCell(myCell[i], info.cellInfo[nearest], true) < 0.5 * myCell[i].r) {
+					direction = compute_dir(myCell[i].x, myCell[i].y,
+						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
+					info.myCommandList.addCommand(Move, myCell[i].id, direction);
+				}
+				else {
+					for (double i = 0; i < 360; i += 1) {
+						double dx = cos(i / 360 * 2 * pi) * N;
+						double dy = sin(i / 360 * 2 * pi) * N;
+						if (safe(info, myCell[i].x, myCell[i].y, myCell[i].r, myCell[i].x + dx, myCell[i].y + dy) == -1) {
+							direction = compute_dir(myCell[i].x + dx, myCell[i].y + dy, myCell[i].x, myCell[i].y, myCell[i].r);
+							info.myCommandList.addCommand(Move, myCell[i].id, direction);
+							break;
+						}
 					}
 				}
 			}
