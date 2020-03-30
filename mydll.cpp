@@ -40,20 +40,33 @@ double MINBOUND = 0.1;
 double MAXDIST = 425;
 double DISTFACTOR = 1.1;
 int DISASTERROUND = 700;
-int splitCheck(std::vector<CellInfo> cells, int maxCell, int curCell,
-	int round, CellInfo nearestEnemy) {
+int HELP_RANGE = 50;
+int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cellsIndanger, int curCell,
+	int round) {
 
 	double maxR = cells[maxCell].r;
-	double enemyR = nearestEnemy.r;
+	//double enemyR = nearestEnemy.r;
 	bool minboundJudge = cells[curCell].r > MINBOUND * maxR;
 	bool roundJudge = round < DISASTERROUND || curCell == maxCell;
-	bool enemyJudge = maxR > 0.9 * enemyR;
+	bool enemyJudge = cellsIndanger.size() == 0;//maxR > 0.9 * enemyR;
 	if (!enemyJudge) {
-		double distToEnemy = dist(
+		enemyJudge = true;
+		for (int i = 0; i < cellsIndanger.size(); ++i) {
+			CellInfo& tarCell = cells[cellsIndanger[i]];
+			double circleDist = distCell(cells[curCell], tarCell);
+			if (circleDist > HELP_RANGE)
+				continue;
+			else {
+				//found target which needed help
+				enemyJudge = false;
+				break;
+			}
+		}
+		/*double distToEnemy = dist(
 			cells[curCell].x, cells[curCell].y,
 			nearestEnemy.x, nearestEnemy.y
 		);
-		enemyJudge = distToEnemy > DISTFACTOR * (maxR + enemyR); //max cell is still far from enemy
+		enemyJudge = distToEnemy > DISTFACTOR * (maxR + enemyR); //max cell is still far from enemy*/
 	}
 	if (minboundJudge && roundJudge && enemyJudge)
 		return -1;
