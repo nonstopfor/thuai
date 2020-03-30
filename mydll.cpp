@@ -145,7 +145,8 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//À„
 	}
 	int direction = (int)(atan2(dy, dx) / pi * 180 + 360) % 360;
 	if (spike != -1) {
-		direction += 90; direction %= 360;
+		direction += 90;
+        direction %= 360;
 	}
 	return direction;
 }
