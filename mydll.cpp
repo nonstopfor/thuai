@@ -13,6 +13,7 @@ using namespace std;
 const double N = 300;
 const double MINR = 6;
 const double lam = 0.9;//小细胞与大细胞半径比值小于这个时被吞噬
+double PI = 3.14159265;
 Info* globalInfo;
 typedef pair<double, double> PAIR;
 /*
@@ -173,6 +174,16 @@ bool catchable(CellInfo me, CellInfo enemy) {
 	}
 }
 
+double gain_nutrient(CellInfo& mycell, NutrientInfo& nut) {
+	//吃营养物质的收益
+	double d = dist(mycell.x, mycell.y, nut.nux, nut.nuy) - mycell.r * 2 / 3;
+	return PI * nut.nur * nut.nur / (d / 20 * mycell.r);
+}
+double gain_cell(CellInfo& mycell, CellInfo& enemy) {
+	//double d = dist(mycell.x, mycell.y, enemy.x, enemy.y) - mycell.r * 2 / 3;
+	return (PI * enemy.r * enemy.r + 500) / timeConsume(mycell, enemy);
+}
+
 void player_ai(Info& info)
 {
 	globalInfo = &info;
@@ -210,7 +221,7 @@ void player_ai(Info& info)
 			targetY = myCell[split].y;
 		}
 		else {
-			vector<int>nutrient_idx;//将营养物质按到当前细胞的距离大小排序
+			vector<int>nutrient_idx;//将营养物质按平均收益大小排序
 
 			for (int j = 0; j < info.nutrientInfo.size(); ++j) {
 				if (vis[j]) continue;
@@ -225,11 +236,16 @@ void player_ai(Info& info)
 				}
 			}
 			sort(nutrient_idx.begin(), nutrient_idx.end(), [&](int a, int b) {
+				double g1 = gain_nutrient(myCell[i], info.nutrientInfo[a]);
+				double g2 = gain_nutrient(myCell[i], info.nutrientInfo[b]);
+				return g1 > g2;
+				/*
 				double d1 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[a].nux, info.nutrientInfo[a].nuy);
 				double d2 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[b].nux, info.nutrientInfo[b].nuy);
 				return d1 < d2;
+				*/
 				});
-			vector<int>cell_idx;//将其他小细胞按到当前细胞的距离大小排序
+			vector<int>cell_idx;//将其他小细胞按平均收益排序
 			for (int j = 0; j < info.cellInfo.size(); ++j) {
 				auto& k = info.cellInfo[j];
 				if (k.ownerid == myID) continue;
@@ -237,6 +253,7 @@ void player_ai(Info& info)
 				double t = 1 - sqrt(2) / 3;
 				if (min(abs(k.x), abs(N - k.x)) <= myCell[i].r * t) continue;
 				if (min(abs(k.y), abs(N - k.y)) <= myCell[i].r * t) continue;
+				if (!catchable(myCell[i], info.cellInfo[j])) continue;
 				int w = safe(info, myCell[i].x, myCell[i].y, myCell[i].r, k.x, k.y);
 				if (w != -2) {
 					//如果不是路径上有其他细胞
@@ -244,10 +261,49 @@ void player_ai(Info& info)
 				}
 			}
 			sort(cell_idx.begin(), cell_idx.end(), [&](int a, int b) {
+				double g1 = gain_cell(myCell[i], info.cellInfo[a]);
+				double g2 = gain_cell(myCell[i], info.cellInfo[b]);
+				return g1 > g2;
+				/*
 				double d1 = dist(myCell[i].x, myCell[i].y, info.cellInfo[a].x, info.cellInfo[a].y);
 				double d2 = dist(myCell[i].x, myCell[i].y, info.cellInfo[b].x, info.cellInfo[b].y);
 				return d1 < d2;
+				*/
 				});
+			double gmax = -1;
+			if (cell_idx.empty() && nutrient_idx.empty()) {
+
+			}
+			else if (cell_idx.empty()) {
+				if (nutrient_idx.size() >= 2 && myCell.size() < 6 && myCell[i].r > sqrt(2) * MINR && info.round < 150) {
+					int dir0 = compute_dir(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
+					info.myCommandList.addCommand(Division, myCell[i].id, dir0);
+					continue;
+				}
+				else {
+					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
+					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
+
+				}
+			}
+			else if (nutrient_idx.empty()) {
+				targetX = info.cellInfo[cell_idx[0]].x;
+				targetY = info.cellInfo[cell_idx[0]].y;
+			}
+			else {
+				if (gain_cell(myCell[i], info.cellInfo[cell_idx[0]]) > gain_nutrient(myCell[i], info.nutrientInfo[nutrient_idx[0]])) {
+					targetX = info.cellInfo[cell_idx[0]].x;
+					targetY = info.cellInfo[cell_idx[0]].y;
+				}
+				else {
+					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
+					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
+
+				}
+
+			}
+
+			/*
 			double dn0 = 10000, dn1 = 10000, dc0 = 10000, dc1 = 10000;
 			if (nutrient_idx.size() >= 2) dn1 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy);
 			if (nutrient_idx.size() >= 1) dn0 = dist(myCell[i].x, myCell[i].y, info.nutrientInfo[nutrient_idx[0]].nux, info.nutrientInfo[nutrient_idx[0]].nuy);
@@ -297,7 +353,7 @@ void player_ai(Info& info)
 				}
 
 			}
-
+			*/
 		}
 		int direction = 0;
 		double pi = 3.14159265;
