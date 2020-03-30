@@ -90,7 +90,13 @@ int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cell
 	return target;
 }
 
+bool Judge(PAIR P, PAIR yuan, double R) {
+	//判断点是否在圆内
+	if ((P.first - yuan.first) * (P.first - yuan.first) + (P.second - yuan.second) * (P.second - yuan.second) <= R * R) return true;
+	return false;
+}
 bool Judis(PAIR P1, PAIR P2, PAIR yuan, double R) {
+	if (Judge(P1, yuan, R) || Judge(P2, yuan, R)) return true;
 	double A, B, C, dist1, dist2, angle1, angle2;//Ax+By+C=0;//(y1-y2)x +(x2-x1)y +x1y2-y1x2=0
 	if (P1.first == P2.first)
 		A = 1, B = 0, C = -P1.first;
@@ -127,7 +133,7 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, r + ar)) return -2;
+		if (Judis(p1, p2, p3, 2.0 / 3 * ar + 20 / cell.r * 1.1)) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
@@ -245,6 +251,21 @@ vector<int>getdangeridx(Info& info) {
 	return res;
 }
 
+bool safe_cell(double x, double y, double r, Info& info) {
+	TPlayerID myID = info.myID;
+
+	for (auto& cell : info.cellInfo) {
+		if (cell.ownerid == myID) continue;
+		if (r / cell.r > lam) continue;
+		double d = dist(x, y, cell.x, cell.y) - cell.r * 2 / 3;
+		if (d < 1.1 * (20 / r * 2.0 + 20 / cell.r)) {
+			cout << info.round << " d and 20/cell.r: " << d << ' ' << cell.r << endl;
+			return false;
+		}
+
+	}
+	return true;
+}
 
 
 void player_ai(Info& info)
@@ -329,6 +350,104 @@ void player_ai(Info& info)
 				return g1 > g2;
 				});
 			double gmax = -1;
+			if (myCell.size() < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell.x, curCell.y, curCell.r / sqrt(2), info) && cell_idx.size() + nutrient_idx.size() > 1) {
+				if (!nutrient_idx.empty()) {
+					// Todo: 更精细的设计
+					double gain_1 = 0;//不分裂的最大收益
+					double gain_2 = 0;//分裂的最大收益
+					double tx1 = 0, ty1 = 0;//不分裂时目标位置
+					double tx2 = 0, ty2 = 0;//分裂时冲向的目标位置
+					double gain_1_cell = cell_idx.empty() ? -1 : gain_cell(curCell, info.cellInfo[cell_idx[0]]);
+					double gain_1_nut = gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]]);
+					if (gain_1_nut > gain_1_cell) {
+						gain_1 = gain_1_nut;
+						tx1 = info.nutrientInfo[nutrient_idx[0]].nux;
+						ty1 = info.nutrientInfo[nutrient_idx[0]].nuy;
+					}
+					else {
+						gain_1 = gain_1_cell;
+						tx1 = info.cellInfo[cell_idx[0]].x;
+						ty1 = info.cellInfo[cell_idx[0]].y;
+					}
+					struct p {
+						int gain;
+						double x;
+						double y;
+						p(int _gain, int _x, int _y) :gain(_gain), x(_x), y(_y) {}
+						bool operator<(const p& t) {
+							return gain > t.gain;
+						}
+					};
+					vector<p>tmp;
+					for (int k = 0; k < min((int)nutrient_idx.size(), 2); ++k) {
+						auto& nut = info.nutrientInfo[nutrient_idx[k]];
+						tmp.push_back(p(gain_nutrient(curCell, nut), nut.nux, nut.nuy));
+					}
+					int cnt = 0;
+					for (int k = 0; k < cell_idx.size(); ++k) {
+						auto& cell = info.cellInfo[cell_idx[k]];
+						if (cell.r / (curCell.r / sqrt(2)) >= lam) continue;
+						tmp.push_back(p(gain_cell(curCell, cell), cell.x, cell.y));
+						if (++cnt > 1) break;
+					}
+					sort(tmp.begin(), tmp.end());
+					cout << info.round << ": " << tmp.size() << endl;
+					if (tmp.size() > 1) {
+						gain_2 = tmp[0].gain + tmp[1].gain;
+						if (gain_2 > gain_1) {
+							int dir1 = compute_dir(tmp[1].x, tmp[1].y, curCell.x, curCell.y);
+							info.myCommandList.addCommand(Division, curCell.id, dir1);
+							continue;
+						}
+						else {
+							targetX = tx1;
+							targetY = ty1;
+						}
+					}
+					else {
+						gain_2 = tmp[0].gain;
+						if (gain_2 > gain_1) {
+							targetX = tmp[0].x;
+							targetY = tmp[0].y;
+						}
+						else {
+							targetX = tx1;
+							targetY = ty1;
+						}
+					}
+				}
+				else {
+					bool flag = false;
+					for (int k = 0; k < cell_idx.size(); ++k) {
+						auto& cell = info.cellInfo[cell_idx[k]];
+						if (cell.r / (curCell.r / sqrt(2)) < lam) {
+							int dir1 = compute_dir(cell.x, cell.y, curCell.x, curCell.y);
+							info.myCommandList.addCommand(Division, curCell.id, dir1);
+							flag = true;
+							break;
+						}
+					}
+					if (!flag) {
+						int dir1 = compute_dir(info.cellInfo[cell_idx[0]].x, info.cellInfo[cell_idx[0]].y, curCell.x, curCell.y);
+						info.myCommandList.addCommand(Move, curCell.id, dir1);
+					}
+					continue;
+				}
+
+			}
+			else if (cell_idx.size() + nutrient_idx.size() > 0) {
+				double max_gain_nut = nutrient_idx.empty() ? -1 : gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]]);
+				double max_gain_cell = cell_idx.empty() ? -1 : gain_cell(curCell, info.cellInfo[cell_idx[0]]);
+				if (max_gain_nut > max_gain_cell) {
+					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
+					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
+				}
+				else {
+					targetX = info.cellInfo[cell_idx[0]].x;
+					targetY = info.cellInfo[cell_idx[0]].y;
+				}
+			}
+			/*
 			if (cell_idx.empty() && nutrient_idx.empty()) {
 
 			}
@@ -363,8 +482,8 @@ void player_ai(Info& info)
 				}
 
 			}
+			*/
 
-			
 		}
 		int direction = 0;
 		double pi = 3.14159265;
@@ -406,13 +525,13 @@ void player_ai(Info& info)
 					else if (distCell(curCell, info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
 						nearest = k;
 				}
-				if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 0.5 * curCell.r) {
+				if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
 					direction = compute_dir(curCell.x, curCell.y,
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
 
 					//开始判断撞边
-					double predictX = curCell.x + (maxSpeed(curCell) + curCell.r) * cos((double)direction / 360 * 2 * pi);
-					double predictY = curCell.y + (maxSpeed(curCell) + curCell.r) * sin((double)direction / 360 * 2 * pi);
+					double predictX = curCell.x + (maxSpeed(curCell) + 1.3 * curCell.r) * cos((double)direction / 360 * 2 * pi);
+					double predictY = curCell.y + (maxSpeed(curCell) + 1.3 * curCell.r) * sin((double)direction / 360 * 2 * pi);
 					if (predictX <= 0) {
 						if (direction < 180) direction = 180 - direction;
 						else if (direction > 180) direction = 540 - direction;
@@ -437,15 +556,18 @@ void player_ai(Info& info)
 					info.myCommandList.addCommand(Move, curCell.id, direction);
 				}
 				else {
+					bool flag = false;
 					for (double angle = 0; angle < 360; angle += 1) {
 						double dx = cos(angle / 360 * 2 * pi) * N;
 						double dy = sin(angle / 360 * 2 * pi) * N;
 						if (safe(info, curCell.x, curCell.y, curCell.r, curCell.x + dx, curCell.y + dy) == -1) {
 							direction = compute_dir(curCell.x + dx, curCell.y + dy, curCell.x, curCell.y, curCell.r);
 							info.myCommandList.addCommand(Move, curCell.id, direction);
+							flag = true;
 							break;
 						}
 					}
+					if (!flag) cout << info.round << ":not move" << endl;
 				}
 			}
 		}
