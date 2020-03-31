@@ -6,19 +6,22 @@ import sys
 def run(cmd, file_name, times):
     times = int(times)
     pos_sum = 0
+    best_pos = 15
     point_sum = 0
     for i in range(times):
         os.system(cmd)
         with open(file_name, 'r') as fin:
             result = fin.readlines()[-1].split(' ')
             pos = int(result[2])
+            if pos < best_pos:
+                best_pos = pos
             point = int(result[3])
         pos_sum += pos
         point_sum += point
         print(f'round {i}, ranked {pos}, point {point}')
     pos_average = pos_sum / times
     point_average = point_sum / times
-    print(f'average rank {pos_average}, average point {point_average}')
+    print(f'average rank {pos_average}, average point {point_average}, best rank {best_pos}')
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
