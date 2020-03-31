@@ -133,7 +133,7 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, 2.0 / 3 * ar + 20 / cell.r * 1.1)) return -2;
+		if (Judis(p1, p2, p3, ar + cell.v + 10 / cell.r)) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
@@ -141,7 +141,7 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double ar = t.sr;
 		if (ar >= r) continue;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, 1.1 * ar + r)) return i;
+		if (Judis(p1, p2, p3, ar + r)) return i;
 	}
 	return -1;
 }
@@ -226,23 +226,22 @@ bool catchable(CellInfo me, CellInfo enemy) {
 	return reach > 0;
 }
 
-vector<int>getdangeridx(Info& info) {
+vector<int>getdangeridx(Info& info, vector<CellInfo>& myCell) {
 	vector<int>res;
 	TPlayerID myID = info.myID;
-	for (int i = 0; i < info.cellInfo.size(); ++i) {
-		if (info.cellInfo[i].ownerid != myID) continue;
+	for (int i = 0; i < myCell.size(); ++i) {
 		int nearestEnemy = 0;// index in all cells
 		while (nearestEnemy < info.cellInfo.size() && info.cellInfo[nearestEnemy].ownerid == myID) nearestEnemy++;
 		for (int k = nearestEnemy + 1; k < info.cellInfo.size(); k++) {
 			if (info.cellInfo[k].ownerid == myID) continue;
 			CellInfo& e = info.cellInfo[k];
-			if (distCell(e, info.cellInfo[i], true) < distCell(info.cellInfo[nearestEnemy], info.cellInfo[i], true))
+			if (distCell(e, myCell[i], true) < distCell(info.cellInfo[nearestEnemy], myCell[i], true))
 				nearestEnemy = k;
 		}
 		if (nearestEnemy >= info.cellInfo.size()) continue;
-		double r = info.cellInfo[i].r;
+		double r = myCell[i].r;
 		double enemyr = info.cellInfo[nearestEnemy].r;
-		double dist2enemy = dist(info.cellInfo[i].x, info.cellInfo[i].y, info.cellInfo[nearestEnemy].x, info.cellInfo[nearestEnemy].y);
+		double dist2enemy = dist(myCell[i].x, myCell[i].y, info.cellInfo[nearestEnemy].x, info.cellInfo[nearestEnemy].y);
 
 		if (r / enemyr < 0.9 && dist2enemy <= DISTFACTOR * (r + enemyr)) {
 			res.push_back(i);
@@ -257,9 +256,9 @@ bool safe_cell(double x, double y, double r, Info& info) {
 	for (auto& cell : info.cellInfo) {
 		if (cell.ownerid == myID) continue;
 		if (r / cell.r > lam) continue;
-		double d = dist(x, y, cell.x, cell.y) - cell.r * 2 / 3;
-		if (d < 1.1 * (20 / r * 2.0 + 20 / cell.r)) {
-			cout << info.round << " d and 20/cell.r: " << d << ' ' << cell.r << endl;
+		double d = dist(x, y, cell.x, cell.y) - r - cell.r;
+		if (d < r) {
+			cout << info.round << " d and r cell.r: " << d << ' ' << r << ' ' << cell.r << endl;
 			return false;
 		}
 
@@ -296,7 +295,7 @@ void player_ai(Info& info)
 	if (nearestEnemy >= info.cellInfo.size()) return;
 
 	vector<bool>vis(info.nutrientInfo.size(), false);
-	vector<int>dangercell_idx = getdangeridx(info);
+	vector<int>dangercell_idx = getdangeridx(info, myCell);
 
 	for (int cur = 0; cur < myCell.size(); cur++)
 	{
@@ -350,6 +349,8 @@ void player_ai(Info& info)
 				return g1 > g2;
 				});
 			double gmax = -1;
+
+			/*
 			if (myCell.size() < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell.x, curCell.y, curCell.r / sqrt(2), info) && cell_idx.size() + nutrient_idx.size() > 1) {
 				if (!nutrient_idx.empty()) {
 					// Todo: 更精细的设计
@@ -400,17 +401,20 @@ void player_ai(Info& info)
 							continue;
 						}
 						else {
+							if (gain_1_nut > gain_1_cell) vis[nutrient_idx[0]] = true;
 							targetX = tx1;
 							targetY = ty1;
 						}
 					}
 					else {
-						gain_2 = tmp[0].gain;
+						gain_2 = tmp[0].gain;//此时tmp里面必然是第一个营养物质
 						if (gain_2 > gain_1) {
+							vis[nutrient_idx[0]] = true;
 							targetX = tmp[0].x;
 							targetY = tmp[0].y;
 						}
 						else {
+							if (gain_1_nut > gain_1_cell) vis[nutrient_idx[0]] = true;
 							targetX = tx1;
 							targetY = ty1;
 						}
@@ -447,7 +451,8 @@ void player_ai(Info& info)
 					targetY = info.cellInfo[cell_idx[0]].y;
 				}
 			}
-			/*
+			*/
+
 			if (cell_idx.empty() && nutrient_idx.empty()) {
 
 			}
@@ -482,7 +487,7 @@ void player_ai(Info& info)
 				}
 
 			}
-			*/
+
 
 		}
 		int direction = 0;
@@ -494,7 +499,7 @@ void player_ai(Info& info)
 				if (info.cellInfo[k].ownerid == myID) continue;
 				if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
 				if (nearest == -1) nearest = k;
-				else if (distCell(curCell, info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
+				else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest]))
 					nearest = k;
 			}
 			if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
@@ -522,7 +527,7 @@ void player_ai(Info& info)
 					if (info.cellInfo[k].ownerid == myID) continue;
 					if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
 					if (nearest == -1) nearest = k;
-					else if (distCell(curCell, info.cellInfo[k]) < distCell(myCell[nearest], info.cellInfo[k]))
+					else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest]))
 						nearest = k;
 				}
 				if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
@@ -530,8 +535,8 @@ void player_ai(Info& info)
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
 
 					//开始判断撞边
-					double predictX = curCell.x + (maxSpeed(curCell) + 1.3 * curCell.r) * cos((double)direction / 360 * 2 * pi);
-					double predictY = curCell.y + (maxSpeed(curCell) + 1.3 * curCell.r) * sin((double)direction / 360 * 2 * pi);
+					double predictX = curCell.x + (maxSpeed(curCell) + 1.1 * curCell.r) * cos((double)direction / 360 * 2 * pi);
+					double predictY = curCell.y + (maxSpeed(curCell) + 1.1 * curCell.r) * sin((double)direction / 360 * 2 * pi);
 					if (predictX <= 0) {
 						if (direction < 180) direction = 180 - direction;
 						else if (direction > 180) direction = 540 - direction;
