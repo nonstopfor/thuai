@@ -11,8 +11,8 @@ def run(cmd, file_name, times):
         os.system(cmd)
         with open(file_name, 'r') as fin:
             result = fin.readlines()[-1].split(' ')
-            pos = result[2]
-            point = result[3]
+            pos = int(result[2])
+            point = int(result[3])
         pos_sum += pos
         point_sum += point
         print(f'round {i}, ranked {pos}, point {point}')
