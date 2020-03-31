@@ -9,7 +9,11 @@ def run(cmd, file_name, times):
     best_pos = 15
     point_sum = 0
     for i in range(times):
-        os.system(cmd)
+        try:
+            os.system(cmd)
+        except Exception:
+            print(f'round {i} passed, error occured')
+            continue
         with open(file_name, 'r') as fin:
             result = fin.readlines()[-1].split(' ')
             pos = int(result[2])
