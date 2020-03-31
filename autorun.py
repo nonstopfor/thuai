@@ -22,7 +22,10 @@ def run(cmd, file_name, times):
             point = int(result[3])
         pos_sum += pos
         point_sum += point
+        pos_average = pos_sum / (i+1)
+        point_average = point_sum / (i+1)
         print(f'round {i}, ranked {pos}, point {point}')
+        print(f'average rank {pos_average}, average point {point_average}, best rank {best_pos}')
     pos_average = pos_sum / times
     point_average = point_sum / times
     print(f'average rank {pos_average}, average point {point_average}, best rank {best_pos}')
