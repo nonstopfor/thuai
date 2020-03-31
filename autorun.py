@@ -5,7 +5,8 @@ import sys
 
 def output(s, fout):
     print(s)
-    fout.write(s)
+    fout.write(s+'\n')
+    fout.flush()
 
 def run(cmd, file_name, times):
     times = int(times)
