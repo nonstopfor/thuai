@@ -3,16 +3,21 @@
 import os
 import sys
 
+def output(s, fout):
+    print(s)
+    fout.write(s)
+
 def run(cmd, file_name, times):
     times = int(times)
     pos_sum = 0
     best_pos = 15
     point_sum = 0
+    record = open("./log.txt", 'w')
     for i in range(times):
         try:
             os.system(cmd)
         except Exception:
-            print(f'round {i} passed, error occured')
+            output(f'round {i} passed, error occured', record)
             continue
         with open(file_name, 'r') as fin:
             result = fin.readlines()[-1].split(' ')
@@ -24,11 +29,14 @@ def run(cmd, file_name, times):
         point_sum += point
         pos_average = pos_sum / (i+1)
         point_average = point_sum / (i+1)
-        print(f'round {i}, ranked {pos}, point {point}')
-        print(f'average rank {pos_average}, average point {point_average}, best rank {best_pos}')
+        output(f'round {i}, ranked {pos}, point {point}', record)
+        output(f'average rank {pos_average}, average point {point_average}, best rank {best_pos}',\
+                record)
     pos_average = pos_sum / times
     point_average = point_sum / times
-    print(f'average rank {pos_average}, average point {point_average}, best rank {best_pos}')
+    output(f'final average rank {pos_average}, average point {point_average}, best rank {best_pos}',\
+            record)
+    record.close()
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
