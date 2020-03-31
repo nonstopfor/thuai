@@ -252,15 +252,16 @@ vector<int>getdangeridx(Info& info, vector<CellInfo>& myCell) {
 	return res;
 }
 
-bool safe_cell(double x, double y, double r, Info& info) {
+bool safe_cell(CellInfo me, Info& info) {
+	//判断分裂后是否安全
 	TPlayerID myID = info.myID;
-
+	me.r /= sqrt(2.0);
 	for (auto& cell : info.cellInfo) {
 		if (cell.ownerid == myID) continue;
-		if (r / cell.r > lam) continue;
-		double d = dist(x, y, cell.x, cell.y) - r - cell.r;
-		if (d < r) {
-			cout << info.round << " d and r cell.r: " << d << ' ' << r << ' ' << cell.r << endl;
+		if (me.r / cell.r > lam) continue;
+		double d = distCell(me, cell, true);
+		if (d < 1.3 * me.r && catchable(cell,me)) {
+			cout << info.round << " d and me.r cell.r: " << d << ' ' << me.r << ' ' << cell.r << endl;
 			return false;
 		}
 
@@ -353,7 +354,7 @@ void player_ai(Info& info)
 			double gmax = -1;
 
 			/*
-			if (myCell.size() < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell.x, curCell.y, curCell.r / sqrt(2), info) && cell_idx.size() + nutrient_idx.size() > 1) {
+			if (myCell.size() < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell, info) && cell_idx.size() + nutrient_idx.size() > 1) {
 				if (!nutrient_idx.empty()) {
 					// Todo: 更精细的设计
 					double gain_1 = 0;//不分裂的最大收益
@@ -373,10 +374,10 @@ void player_ai(Info& info)
 						ty1 = info.cellInfo[cell_idx[0]].y;
 					}
 					struct p {
-						int gain;
+						double gain;
 						double x;
 						double y;
-						p(int _gain, int _x, int _y) :gain(_gain), x(_x), y(_y) {}
+						p(double _gain, double _x, double _y) :gain(_gain), x(_x), y(_y) {}
 						bool operator<(const p& t) {
 							return gain > t.gain;
 						}
@@ -454,7 +455,7 @@ void player_ai(Info& info)
 				}
 			}
 			*/
-
+			
 			if (cell_idx.empty() && nutrient_idx.empty()) {
 
 			}
@@ -489,7 +490,7 @@ void player_ai(Info& info)
 				}
 
 			}
-
+			
 
 		}
 		int direction = 0;
