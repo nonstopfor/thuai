@@ -40,8 +40,9 @@ double distCell(CellInfo c1, CellInfo c2, bool removeRadius = false) {
 	return distRaw;
 }
 
-double MINBOUND = 0.1;
+double MINBOUND = 0.2;
 double MAXDIST = 425;
+double UNIONDIST = 60; // if too far away from ally big cells, don't union
 double DISTFACTOR = 1.1;
 int DISASTERROUND = 700;
 int HELP_RANGE = 50;
@@ -77,17 +78,18 @@ int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cell
 	}
 	if (minboundJudge && roundJudge && enemyJudge)
 		return -1;
-	double x = cells[curCell].x, y = cells[curCell].y;
 	int target = -1;
 	double minDist = MAXDIST;
 	for (int i = 0; i < cells.size(); ++i) {
-		double distance = dist(x, y, cells[i].x, cells[i].y);
+		double distance = distCell(cells[curCell], cells[i], true);
 		if (i != curCell && distance < minDist) {
 			target = i;
 			minDist = distance;
 		}
 	}
-	return target;
+	if (minDist < UNIONDIST)
+		return target;
+	else return -1;
 }
 
 bool Judge(PAIR P, PAIR yuan, double R) {
