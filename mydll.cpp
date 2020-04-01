@@ -199,8 +199,10 @@ double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
     if (time) {
         double v_0 = mySpeed - enemySpeed, a = myAcc - enAcc;
         double delta = v_0 * v_0 + 2 * a * distance;
-        if (delta < 0) return INF;
-        return (-v_0 + sqrt(delta)) / a;
+		double catchUpTime = 0;
+        if (delta < 0 || (catchUpTime = -v_0 + sqrt(delta) < 0))
+			return INF;
+        return catchUpTime;
     }
     if (t >= t_limit) {
         double runDist = (mySpeed - enemySpeed) * t_limit +
