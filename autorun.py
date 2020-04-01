@@ -38,8 +38,9 @@ def run(cmd, file_name, times):
         point_sum += point
         pos_average = pos_sum / (i+1)
         point_average = point_sum / (i+1)
-        with open(directory+f"/round{i}_rank{pos}.txt", 'w') as fout:
-            fout.writelines(lines)
+        if (pos <= pos_average and pos <= 6) or pos == 1:
+            with open(directory+f"/round{i}_rank{pos}.txt", 'w') as fout:
+                fout.writelines(lines)
         output(f'round {i}, ranked {pos}, point {point}', record)
         output(f'average rank {pos_average}, average point {point_average}, best rank {best_pos}',\
                 record)
