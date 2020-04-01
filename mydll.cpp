@@ -199,8 +199,10 @@ double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
 	if (time) {
 		double v_0 = mySpeed - enemySpeed, a = myAcc - enAcc;
 		double delta = v_0 * v_0 + 2 * a * distance;
-		if (delta < 0) return INF;
-		return (-v_0 + sqrt(delta)) / a;
+		double catchUpTime = 0;
+		if (delta < 0 || (catchUpTime = -v_0 + sqrt(delta) < 0))
+			return INF;
+		return catchUpTime;
 	}
 	if (t >= t_limit) {
 		double runDist = (mySpeed - enemySpeed) * t_limit +
@@ -590,7 +592,7 @@ void player_ai(Info& info)
 				else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest]))
 					nearest = k;
 			}
-			if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 0) {
+			if (nearest != -1 && distCell(curCell, info.cellInfo[nearest]) < info.cellInfo[nearest].r) {
 				direction = compute_dir(curCell.x, curCell.y,
 					info.cellInfo[nearest].x, info.cellInfo[nearest].y);
 				info.myCommandList.addCommand(Move, curCell.id, direction);
@@ -602,7 +604,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-	}
+		}
 		else {
 			if (targetX < N + 1)
 			{
@@ -622,7 +624,7 @@ void player_ai(Info& info)
 					if (nearest == -1) nearest = k;
 					else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest]))
 						nearest = k;
-			}
+				}
 #ifdef DEBUG
 				debugInfo[cur] << "\ttargetX >= N + 1, nearest = " << nearest << endl;
 #endif
@@ -683,11 +685,11 @@ void player_ai(Info& info)
 #endif
 
 				}
-		}
+			}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-}
+	}
 
 }
