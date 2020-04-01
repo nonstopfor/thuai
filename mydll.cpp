@@ -256,11 +256,12 @@ bool safe_cell(CellInfo me, Info& info) {
 	//判断分裂后是否安全
 	TPlayerID myID = info.myID;
 	me.r /= sqrt(2.0);
+	me.v = 0;
 	for (auto& cell : info.cellInfo) {
 		if (cell.ownerid == myID) continue;
 		if (me.r / cell.r > lam) continue;
 		double d = distCell(me, cell, true);
-		if (d < 1.3 * me.r && catchable(cell,me)) {
+		if (d < 1.3 * me.r && catchable(cell, me)) {
 			cout << info.round << " d and me.r cell.r: " << d << ' ' << me.r << ' ' << cell.r << endl;
 			return false;
 		}
@@ -353,7 +354,7 @@ void player_ai(Info& info)
 				});
 			double gmax = -1;
 
-			/*
+
 			if (myCell.size() < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell, info) && cell_idx.size() + nutrient_idx.size() > 1) {
 				if (!nutrient_idx.empty()) {
 					// Todo: 更精细的设计
@@ -391,6 +392,7 @@ void player_ai(Info& info)
 					for (int k = 0; k < cell_idx.size(); ++k) {
 						auto& cell = info.cellInfo[cell_idx[k]];
 						if (cell.r / (curCell.r / sqrt(2)) >= lam) continue;
+
 						tmp.push_back(p(gain_cell(curCell, cell), cell.x, cell.y));
 						if (++cnt > 1) break;
 					}
@@ -399,7 +401,7 @@ void player_ai(Info& info)
 					if (tmp.size() > 1) {
 						gain_2 = tmp[0].gain + tmp[1].gain;
 						if (gain_2 > gain_1) {
-							int dir1 = compute_dir(tmp[1].x, tmp[1].y, curCell.x, curCell.y);
+							int dir1 = compute_dir(tmp[0].x, tmp[0].y, curCell.x, curCell.y);
 							info.myCommandList.addCommand(Division, curCell.id, dir1);
 							continue;
 						}
@@ -427,7 +429,8 @@ void player_ai(Info& info)
 					bool flag = false;
 					for (int k = 0; k < cell_idx.size(); ++k) {
 						auto& cell = info.cellInfo[cell_idx[k]];
-						if (cell.r / (curCell.r / sqrt(2)) < lam) {
+						if (cell.r / (curCell.r / sqrt(2)) < 0.7 * lam) {
+							cout << "Division for cell" << endl;
 							int dir1 = compute_dir(cell.x, cell.y, curCell.x, curCell.y);
 							info.myCommandList.addCommand(Division, curCell.id, dir1);
 							flag = true;
@@ -446,6 +449,7 @@ void player_ai(Info& info)
 				double max_gain_nut = nutrient_idx.empty() ? -1 : gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]]);
 				double max_gain_cell = cell_idx.empty() ? -1 : gain_cell(curCell, info.cellInfo[cell_idx[0]]);
 				if (max_gain_nut > max_gain_cell) {
+					vis[nutrient_idx[0]] = true;
 					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
 					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
 				}
@@ -454,8 +458,8 @@ void player_ai(Info& info)
 					targetY = info.cellInfo[cell_idx[0]].y;
 				}
 			}
-			*/
-			
+
+			/*
 			if (cell_idx.empty() && nutrient_idx.empty()) {
 
 			}
@@ -490,7 +494,7 @@ void player_ai(Info& info)
 				}
 
 			}
-			
+			*/
 
 		}
 		int direction = 0;
