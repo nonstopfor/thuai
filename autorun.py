@@ -46,7 +46,7 @@ def run(cmd, file_name, times):
             with open(debuglog+f"/round{i}_debug.txt", 'w') as fout:
                 fout.write(game.read())
         output(f'round {i}, ranked {pos}, point {point}', record)
-        output(f'average rank {pos_average}, average point {point_average}, best rank {best_pos}',\
+        output(f'\taverage rank {pos_average}, average point {point_average}, best rank {best_pos}',\
                 record)
     pos_average = pos_sum / times
     point_average = point_sum / times

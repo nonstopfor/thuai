@@ -183,6 +183,8 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//ç®
     return direction;
 }
 
+double INF = 1e10;
+
 double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
     double distance = dist(me.x, me.y, enemy.x, enemy.y);
     distance = distance - 2.0 / 3.0 * me.r;
@@ -196,7 +198,7 @@ double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
     if (time) {
         double v_0 = mySpeed - enemySpeed, a = myAcc - enAcc;
         double delta = v_0 * v_0 + 2 * a * distance;
-        if (delta < 0) return -1;
+        if (delta < 0) return INF;
         return (-v_0 + sqrt(delta)) / a;
     }
     if (t >= t_limit) {
