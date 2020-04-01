@@ -10,7 +10,7 @@
 #include <sstream>
 using namespace std;
 
-#define DEBUG
+//#define DEBUG
 
 #define MI 23
 #define NI 19991
@@ -187,34 +187,34 @@ double INF = 1e10;
 
 double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
 
-    double distance = dist(me.x, me.y, enemy.x, enemy.y);
-    distance = distance - 2.0 / 3.0 * me.r;
-    double dist_hat_dir = compute_dir(enemy.x, enemy.y, me.x, me.y);
-    double mySpeed = me.v * cos(me.d - dist_hat_dir);
-    double enemySpeed = enemy.v * cos(enemy.v - dist_hat_dir);
-    double myAcc = 10 / me.r, enAcc = 10 / enemy.r,
-        myTop = 20 / me.r;
-    double t = (myTop - mySpeed) / myAcc,
-        t_limit = (myTop - enemySpeed) / enAcc;
-    if (time) {
-        double v_0 = mySpeed - enemySpeed, a = myAcc - enAcc;
-        double delta = v_0 * v_0 + 2 * a * distance;
-        if (delta < 0) return INF;
-        return (-v_0 + sqrt(delta)) / a;
-    }
-    if (t >= t_limit) {
-        double runDist = (mySpeed - enemySpeed) * t_limit +
-            0.5 * (myAcc - enAcc) * t_limit * t_limit;
-        return runDist - distance;
-    }
-    else {
-        double deltaT = t_limit - t;
-        double runDist = (mySpeed - enemySpeed) * t +
-            0.5 * (myAcc - enAcc) * t * t +
-            (myTop - enemySpeed - enAcc * t) * deltaT -
-            0.5 * enAcc * deltaT * deltaT;
-        return runDist - distance;
-    }
+	double distance = dist(me.x, me.y, enemy.x, enemy.y);
+	distance = distance - 2.0 / 3.0 * me.r;
+	double dist_hat_dir = compute_dir(enemy.x, enemy.y, me.x, me.y);
+	double mySpeed = me.v * cos(me.d - dist_hat_dir);
+	double enemySpeed = enemy.v * cos(enemy.v - dist_hat_dir);
+	double myAcc = 10 / me.r, enAcc = 10 / enemy.r,
+		myTop = 20 / me.r;
+	double t = (myTop - mySpeed) / myAcc,
+		t_limit = (myTop - enemySpeed) / enAcc;
+	if (time) {
+		double v_0 = mySpeed - enemySpeed, a = myAcc - enAcc;
+		double delta = v_0 * v_0 + 2 * a * distance;
+		if (delta < 0) return INF;
+		return (-v_0 + sqrt(delta)) / a;
+	}
+	if (t >= t_limit) {
+		double runDist = (mySpeed - enemySpeed) * t_limit +
+			0.5 * (myAcc - enAcc) * t_limit * t_limit;
+		return runDist - distance;
+	}
+	else {
+		double deltaT = t_limit - t;
+		double runDist = (mySpeed - enemySpeed) * t +
+			0.5 * (myAcc - enAcc) * t * t +
+			(myTop - enemySpeed - enAcc * t) * deltaT -
+			0.5 * enAcc * deltaT * deltaT;
+		return runDist - distance;
+	}
 }
 double timeConsume(CellInfo me, CellInfo enemy) {
 	return distAndTime(me, enemy, true);
@@ -227,6 +227,8 @@ double gain_nutrient(CellInfo& mycell, NutrientInfo& nut) {
 }
 double gain_cell(CellInfo& mycell, CellInfo& enemy) {
 	//double d = dist(mycell.x, mycell.y, enemy.x, enemy.y) - mycell.r * 2 / 3;
+	double t = timeConsume(mycell, enemy);
+	cout << "timeConsume: " << t << endl;
 	return (PI * enemy.r * enemy.r + 500) / timeConsume(mycell, enemy);
 }
 
@@ -270,7 +272,7 @@ bool safe_cell(CellInfo me, Info& info) {
 		double d = distCell(me, cell, true);
 
 		if (d < 0.85 * me.r || (d < 1.3 * me.r && catchable(cell, me))) {
-			//cout << info.round << " d and me.r cell.r: " << d << ' ' << me.r << ' ' << cell.r << endl;
+			cout << info.round << " d and me.r cell.r: " << d << ' ' << me.r << ' ' << cell.r << endl;
 			return false;
 		}
 
@@ -369,10 +371,68 @@ void player_ai(Info& info)
 				double g2 = gain_cell(curCell, info.cellInfo[b]);
 				return g1 > g2;
 				});
-			double gmax = -1;
 
 
 			if (myCell.size() < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell, info) && cell_idx.size() + nutrient_idx.size() > 1) {
+				double gain_1 = 0;//不分裂的最大收益
+				double gain_2 = 0;//分裂的最大收益
+				double tx1 = 0, ty1 = 0;//不分裂时目标位置
+				double tx2 = 0, ty2 = 0;//分裂时冲向的目标位置
+				double gain_1_cell = cell_idx.empty() ? -1 : gain_cell(curCell, info.cellInfo[cell_idx[0]]);
+				double gain_1_nut = nutrient_idx.empty() ? -1 : gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]]);
+				if (gain_1_nut > gain_1_cell) {
+					gain_1 = gain_1_nut;
+					tx1 = info.nutrientInfo[nutrient_idx[0]].nux;
+					ty1 = info.nutrientInfo[nutrient_idx[0]].nuy;
+				}
+				else {
+					gain_1 = gain_1_cell;
+					tx1 = info.cellInfo[cell_idx[0]].x;
+					ty1 = info.cellInfo[cell_idx[0]].y;
+				}
+				struct p {
+					double gain;
+					double x;
+					double y;
+					p(double _gain, double _x, double _y) :gain(_gain), x(_x), y(_y) {}
+					bool operator<(const p& t) {
+						return gain > t.gain;
+					}
+				};
+				vector<p>tmp;
+				for (int k = 0; k < min((int)nutrient_idx.size(), 2); ++k) {
+					auto& nut = info.nutrientInfo[nutrient_idx[k]];
+					tmp.push_back(p(gain_nutrient(curCell, nut), nut.nux, nut.nuy));
+				}
+				int cnt = 0;
+				for (int k = 0; k < cell_idx.size(); ++k) {
+					auto& cell = info.cellInfo[cell_idx[k]];
+					if (cell.r / (curCell.r / sqrt(2)) >= lam) continue;
+
+					tmp.push_back(p(gain_cell(curCell, cell), cell.x, cell.y));
+					if (++cnt > 1) break;
+				}
+				sort(tmp.begin(), tmp.end());
+				cout << info.round << ": " << tmp.size() << endl;
+				if (tmp.size() > 1) {
+					gain_2 = tmp[0].gain + tmp[1].gain;
+					if (gain_2 > gain_1) {
+						int dir1 = compute_dir(tmp[0].x, tmp[0].y, curCell.x, curCell.y);
+						info.myCommandList.addCommand(Division, curCell.id, dir1);
+						continue;
+					}
+					else {
+						if (gain_1_nut > gain_1_cell) vis[nutrient_idx[0]] = true;
+						targetX = tx1;
+						targetY = ty1;
+					}
+				}
+				else {
+					if (gain_1_nut > gain_1_cell) vis[nutrient_idx[0]] = true;
+					targetX = tx1;
+					targetY = ty1;
+				}
+				/*
 				if (!nutrient_idx.empty()) {
 					// Todo: 更精细的设计
 					double gain_1 = 0;//不分裂的最大收益
@@ -441,6 +501,7 @@ void player_ai(Info& info)
 							targetY = ty1;
 						}
 					}
+
 				}
 				else {
 					bool flag = false;
@@ -460,7 +521,7 @@ void player_ai(Info& info)
 					}
 					continue;
 				}
-
+				*/
 			}
 			else if (cell_idx.size() + nutrient_idx.size() > 0) {
 				double max_gain_nut = nutrient_idx.empty() ? -1 : gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]]);
@@ -541,7 +602,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-		}
+	}
 		else {
 			if (targetX < N + 1)
 			{
@@ -561,7 +622,7 @@ void player_ai(Info& info)
 					if (nearest == -1) nearest = k;
 					else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest]))
 						nearest = k;
-				}
+			}
 #ifdef DEBUG
 				debugInfo[cur] << "\ttargetX >= N + 1, nearest = " << nearest << endl;
 #endif
@@ -622,11 +683,11 @@ void player_ai(Info& info)
 #endif
 
 				}
-			}
+		}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-	}
+}
 
 }
