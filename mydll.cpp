@@ -183,35 +183,38 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//ç®
 	return direction;
 }
 
+double INF = 1e10;
+
 double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
-	double distance = dist(me.x, me.y, enemy.x, enemy.y);
-	distance = distance - 2.0 / 3.0 * me.r;
-	double dist_hat_dir = compute_dir(enemy.x, enemy.y, me.x, me.y);
-	double mySpeed = me.v * cos(me.d - dist_hat_dir);
-	double enemySpeed = enemy.v * cos(enemy.v - dist_hat_dir);
-	double myAcc = 10 / me.r, enAcc = 10 / enemy.r,
-		myTop = 20 / me.r;
-	double t = (myTop - mySpeed) / myAcc,
-		t_limit = (myTop - enemySpeed) / enAcc;
-	if (time) {
-		double v_0 = mySpeed - enemySpeed, a = myAcc - enAcc;
-		double delta = v_0 * v_0 + 2 * a * distance;
-		if (delta < 0) return -1;
-		return (-v_0 + sqrt(delta)) / a;
-	}
-	if (t >= t_limit) {
-		double runDist = (mySpeed - enemySpeed) * t_limit +
-			0.5 * (myAcc - enAcc) * t_limit * t_limit;
-		return runDist - distance;
-	}
-	else {
-		double deltaT = t_limit - t;
-		double runDist = (mySpeed - enemySpeed) * t +
-			0.5 * (myAcc - enAcc) * t * t +
-			(myTop - enemySpeed - enAcc * t) * deltaT -
-			0.5 * enAcc * deltaT * deltaT;
-		return runDist - distance;
-	}
+
+    double distance = dist(me.x, me.y, enemy.x, enemy.y);
+    distance = distance - 2.0 / 3.0 * me.r;
+    double dist_hat_dir = compute_dir(enemy.x, enemy.y, me.x, me.y);
+    double mySpeed = me.v * cos(me.d - dist_hat_dir);
+    double enemySpeed = enemy.v * cos(enemy.v - dist_hat_dir);
+    double myAcc = 10 / me.r, enAcc = 10 / enemy.r,
+        myTop = 20 / me.r;
+    double t = (myTop - mySpeed) / myAcc,
+        t_limit = (myTop - enemySpeed) / enAcc;
+    if (time) {
+        double v_0 = mySpeed - enemySpeed, a = myAcc - enAcc;
+        double delta = v_0 * v_0 + 2 * a * distance;
+        if (delta < 0) return INF;
+        return (-v_0 + sqrt(delta)) / a;
+    }
+    if (t >= t_limit) {
+        double runDist = (mySpeed - enemySpeed) * t_limit +
+            0.5 * (myAcc - enAcc) * t_limit * t_limit;
+        return runDist - distance;
+    }
+    else {
+        double deltaT = t_limit - t;
+        double runDist = (mySpeed - enemySpeed) * t +
+            0.5 * (myAcc - enAcc) * t * t +
+            (myTop - enemySpeed - enAcc * t) * deltaT -
+            0.5 * enAcc * deltaT * deltaT;
+        return runDist - distance;
+    }
 }
 double timeConsume(CellInfo me, CellInfo enemy) {
 	return distAndTime(me, enemy, true);
