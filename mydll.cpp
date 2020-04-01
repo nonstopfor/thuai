@@ -135,7 +135,7 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, ar + cell.v + 10 / cell.r)) return -2;
+		if (Judis(p1, p2, p3, r + ar + min(20 / cell.r, cell.v + 10 / cell.r))) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
@@ -510,7 +510,7 @@ void player_ai(Info& info)
 				else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest]))
 					nearest = k;
 			}
-			if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
+			if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 0) {
 				direction = compute_dir(curCell.x, curCell.y,
 					info.cellInfo[nearest].x, info.cellInfo[nearest].y);
 				info.myCommandList.addCommand(Move, curCell.id, direction);
