@@ -261,7 +261,8 @@ bool safe_cell(CellInfo me, Info& info) {
 		if (cell.ownerid == myID) continue;
 		if (me.r / cell.r > lam) continue;
 		double d = distCell(me, cell, true);
-		if (d < 1.3 * me.r && catchable(cell, me)) {
+
+		if (d < 0.85 * me.r || (d < 1.3 * me.r && catchable(cell, me))) {
 			cout << info.round << " d and me.r cell.r: " << d << ' ' << me.r << ' ' << cell.r << endl;
 			return false;
 		}
