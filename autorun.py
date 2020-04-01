@@ -3,6 +3,11 @@
 import os
 import sys
 
+def mkdir(path):
+    folder = os.path.exists(path)
+    if not folder:
+        os.makedirs(path)
+
 def output(s, fout):
     print(s)
     fout.write(s+'\n')
@@ -14,6 +19,8 @@ def run(cmd, file_name, times):
     best_pos = 15
     point_sum = 0
     record = open("./log.txt", 'w')
+    directory = 'records'
+    mkdir(directory)
     for i in range(times):
         try:
             os.system(cmd)
@@ -21,7 +28,8 @@ def run(cmd, file_name, times):
             output(f'round {i} passed, error occured', record)
             continue
         with open(file_name, 'r') as fin:
-            result = fin.readlines()[-1].split(' ')
+            lines = fin.readlines()
+            result = lines[-1].split(' ')
             pos = int(result[2])
             if pos < best_pos:
                 best_pos = pos
@@ -30,6 +38,8 @@ def run(cmd, file_name, times):
         point_sum += point
         pos_average = pos_sum / (i+1)
         point_average = point_sum / (i+1)
+        with open(directory+f"/round{i}_rank{pos}.txt", 'w') as fout:
+            fout.writelines(lines)
         output(f'round {i}, ranked {pos}, point {point}', record)
         output(f'average rank {pos_average}, average point {point_average}, best rank {best_pos}',\
                 record)
