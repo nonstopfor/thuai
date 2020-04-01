@@ -139,7 +139,7 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, r + ar + min(20 / cell.r, cell.v + 10 / cell.r))) return -2;
+		if (Judis(p1, p2, p3, 20 / r + 2 * ar / 3 + min(20 / cell.r, cell.v + 10 / cell.r))) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
@@ -147,7 +147,7 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double ar = t.sr;
 		if (ar >= r) continue;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, ar + r)) return i;
+		if (Judis(p1, p2, p3, ar + r * 2 / 3)) return i;
 	}
 	return -1;
 }
@@ -236,7 +236,7 @@ double gain_cell(CellInfo& mycell, CellInfo& enemy) {
 
 bool catchable(CellInfo me, CellInfo enemy) {
 	double reach = distAndTime(me, enemy);
-	return reach > 0;
+	return reach > INF - 1;
 }
 
 vector<int>getdangeridx(Info& info, vector<CellInfo>& myCell) {
@@ -263,6 +263,11 @@ vector<int>getdangeridx(Info& info, vector<CellInfo>& myCell) {
 	return res;
 }
 
+double safe_factor_round(int round) {
+	if (round < 200) return 1.0;
+	else if (round < 500) return 1.2;
+	else return 1.5;
+}
 bool safe_cell(CellInfo me, Info& info) {
 	//判断分裂后是否安全
 	TPlayerID myID = info.myID;
@@ -273,7 +278,7 @@ bool safe_cell(CellInfo me, Info& info) {
 		if (me.r / cell.r > lam) continue;
 		double d = distCell(me, cell, true);
 
-		if (d < 0.85 * me.r || (d < 1.3 * me.r && catchable(cell, me))) {
+		if (d < 0.85 * safe_factor_round(info.round) * me.r || (d < 1.3 * safe_factor_round(info.round) * me.r && catchable(cell, me))) {
 			cout << info.round << " d and me.r cell.r: " << d << ' ' << me.r << ' ' << cell.r << endl;
 			return false;
 		}
@@ -604,7 +609,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-		}
+			}
 		else {
 			if (targetX < N + 1)
 			{
@@ -684,12 +689,12 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-				}
+						}
 			}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-	}
+					}
 
-}
+					}
