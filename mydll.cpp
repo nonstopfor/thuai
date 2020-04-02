@@ -644,24 +644,28 @@ void player_ai(Info& info)
 					double predictX = curCell.x + (maxSpeed(curCell) + 1.1 * curCell.r) * cos((double)direction / 360 * 2 * pi);
 					double predictY = curCell.y + (maxSpeed(curCell) + 1.1 * curCell.r) * sin((double)direction / 360 * 2 * pi);
 					if (predictX <= 0) {
-						if (direction < 180) direction = 180 - direction;
-						else if (direction > 180) direction = 540 - direction;
-						else direction = 90;
+						if (direction < 135) direction = 180 - direction;
+						else if (direction > 225) direction = 540 - direction;
+						else if (direction < 180) direction = 90;
+                        else direction = 270;
 					}
 					else if (predictX >= N) {
-						if (direction < 180) direction = 180 - direction;
-						else if (direction > 180) direction = 540 - direction;
-						else direction = 90;
+                        if (direction < 135) direction = 180 - direction;
+                        else if (direction > 225) direction = 540 - direction;
+                        else if (direction < 180) direction = 90;
+                        else direction = 270;
 					}
 					else if (predictY <= 0) {
-						if (direction < 270) direction = 360 - direction;
-						else if (direction > 270) direction = 360 - direction;
-						else direction = 0;
+						if (direction < 225) direction = 360 - direction;
+						else if (direction > 315) direction = 360 - direction;
+						else if (direction < 270) direction = 180;
+                        else direction = 0;
 					}
 					else if (predictY >= N) {
-						if (direction < 90) direction = 360 - direction;
-						else if (direction > 90) direction = 360 - direction;
-						else direction = 0;
+                        if (direction < 45) direction = 360 - direction;
+                        else if (direction > 135) direction = 360 - direction;
+                        else if (direction < 90) direction = 0;
+                        else direction = 180;
 					}
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tAfter Checking Boundary, direction = " << direction << endl;
