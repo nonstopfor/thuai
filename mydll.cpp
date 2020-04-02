@@ -153,40 +153,41 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 }
 int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//算绕路就加r，是自己的半径
 
-    double dx = tx - sx;
-    double dy = ty - sy;
-    double pi = 3.14159265;
-    int spike = -1;
-    for (int i = 0; i < globalInfo->spikyballInfo.size(); ++i) {
-        if (r == -1) break;
-        auto& t = globalInfo->spikyballInfo[i];
-        double x = t.sx, y = t.sy;
-        double ar = t.sr;
-        if (ar > r) continue;
-        auto p3 = make_pair(x, y);
-        auto p1 = make_pair(sx, sy);
-        auto p2 = make_pair(tx, ty);
-        if (Judis(p1, p2, p3, ar + r * 1.1)) {// find nearest spike
-            if (spike == -1)
-                spike = i;
-            else {
-                if (dist(sx, sy, globalInfo->spikyballInfo[spike].sx, globalInfo->spikyballInfo[spike].sy)
-                    - globalInfo->spikyballInfo[spike].sr >
-                    dist(sx, sy, x, y) - ar)
-                    spike = i;
-            }
-        }
-    }
-    int direction = (int)(atan2(dy, dx) / pi * 180 + 360) % 360;
-    if (spike != -1) {
-        int direction2 = (int)(atan2(globalInfo->spikyballInfo[spike].sx - sx, globalInfo->spikyballInfo[spike].sy - sy) / pi * 180 + 360) % 360;
-        if (direction2 < direction - 180) direction2 += 360;
-        else if (direction2 > direction + 180) direction2 -= 360;
-        if (direction2 < direction) direction = direction2 + 90;
-        else direction = direction2 - 90;
-        direction = (direction + 360) % 360;
-    }
-    return direction;
+	double dx = tx - sx;
+	double dy = ty - sy;
+	double pi = 3.14159265;
+	int spike = -1;
+	for (int i = 0; i < globalInfo->spikyballInfo.size(); ++i) {
+		if (r < 0) break;
+		auto& t = globalInfo->spikyballInfo[i];
+		double x = t.sx, y = t.sy;
+		double ar = t.sr;
+		if (ar > r) continue;
+		auto p3 = make_pair(x, y);
+		auto p1 = make_pair(sx, sy);
+		auto p2 = make_pair(tx, ty);
+		if (Judis(p1, p2, p3, ar + r * 1.1)) {// find nearest spike
+			if (spike == -1)
+				spike = i;
+			else {
+				if (dist(sx, sy, globalInfo->spikyballInfo[spike].sx, globalInfo->spikyballInfo[spike].sy)
+					- globalInfo->spikyballInfo[spike].sr >
+					dist(sx, sy, x, y) - ar)
+					spike = i;
+			}
+		}
+	}
+	int direction = (int)(atan2(dy, dx) / pi * 180 + 360) % 360;
+	if (spike != -1) {
+		int direction2 = (int)(atan2(globalInfo->spikyballInfo[spike].sx - sx, globalInfo->spikyballInfo[spike].sy - sy) / pi * 180 + 360) % 360;
+		if (direction2 < direction - 180) direction2 += 360;
+		else if (direction2 > direction + 180) direction2 -= 360;
+		if (direction2 < direction) direction = direction2 + 90;
+		else direction = direction2 - 90;
+		direction = (direction + 720) % 360;
+	}
+	//cout << "compute dir:" << direction << endl;
+	return direction;
 }
 
 double INF = 1e10;
@@ -617,7 +618,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-		}
+			}
 		else {
 			if (targetX < N + 1)
 			{
@@ -660,10 +661,10 @@ void player_ai(Info& info)
 						debugInfo[cur] << "\tdirection = " << direction << " direction2 = " << direction2 << endl;
 #endif
 
-                        if (direction2 < direction - 180) direction2 += 360;
-                        else if (direction2 > direction + 180) direction2 -= 360;
-                        direction = ((direction + direction2) / 2 + 360) % 360;
-                    }
+						if (direction2 < direction - 180) direction2 += 360;
+						else if (direction2 > direction + 180) direction2 -= 360;
+						direction = ((direction + direction2) / 2 + 360) % 360;
+					}
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
 #endif
@@ -699,7 +700,7 @@ void player_ai(Info& info)
 #endif
 
 					info.myCommandList.addCommand(Move, curCell.id, direction);
-				}
+					}
 				else {
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
@@ -721,12 +722,12 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-				}
-			}
+					}
+					}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-	}
+				}
 
-}
+				}
