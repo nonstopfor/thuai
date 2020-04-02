@@ -141,6 +141,7 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		auto p3 = make_pair(x, y);
 		if (Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 + min(20 / cell.r, cell.v + 10 / cell.r))) return -2;
 	}
+	/*
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
 		double x = t.sx, y = t.sy;
@@ -149,13 +150,14 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		auto p3 = make_pair(x, y);
 		if (Judis(p1, p2, p3, ar + r * 2 / 3)) return i;
 	}
+	*/
 	return -1;
 }
 int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//算绕路就加r，是自己的半径
 
 	double dx = tx - sx;
 	double dy = ty - sy;
-	double PI = 3.14159265;
+	/*
 	int spike = -1;
 	for (int i = 0; i < globalInfo->spikyballInfo.size(); ++i) {
 		if (r < 0) break;
@@ -177,7 +179,9 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//�
 			}
 		}
 	}
+	*/
 	int direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
+	/*
 	if (spike != -1) {
 		int direction2 = (int)(atan2(globalInfo->spikyballInfo[spike].sx - sx, globalInfo->spikyballInfo[spike].sy - sy) / PI * 180 + 360) % 360;
 		if (direction2 < direction - 180) direction2 += 360;
@@ -186,6 +190,7 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//�
 		else direction = direction2 - 90;
 		direction = (direction + 720) % 360;
 	}
+	*/
 	//cout << "compute dir:" << direction << endl;
 	return direction;
 }
