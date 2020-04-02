@@ -231,7 +231,7 @@ double gain_nutrient(CellInfo& mycell, NutrientInfo& nut) {
 double gain_cell(CellInfo& mycell, CellInfo& enemy) {
 	//double d = dist(mycell.x, mycell.y, enemy.x, enemy.y) - mycell.r * 2 / 3;
 	double t = timeConsume(mycell, enemy);
-	cout << "timeConsume: " << t << endl;
+	//cout << "timeConsume: " << t << endl;
 	return (PI * enemy.r * enemy.r + 500) / timeConsume(mycell, enemy);
 }
 
