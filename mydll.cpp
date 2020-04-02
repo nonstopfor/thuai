@@ -236,7 +236,7 @@ double gain_cell(CellInfo& mycell, CellInfo& enemy) {
 
 bool catchable(CellInfo me, CellInfo enemy) {
 	double reach = distAndTime(me, enemy);
-	return reach > INF - 1;
+	return reach < INF - 1;
 }
 
 vector<int>getdangeridx(Info& info, vector<CellInfo>& myCell) {
