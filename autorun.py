@@ -22,12 +22,12 @@ def run(cmd, file_name, times):
     directory = 'records'
     mkdir(directory)
     debuglog = 'debuglog'
-    mkdir(directory)
+    mkdir(debuglog)
     for i in range(times):
         try:
-            game = os.popen(cmd)
-        except Exception:
-            output(f'round {i} passed, error occured', record)
+            os.system(cmd+" >> "+ debuglog+f"/round{i}_debug.txt")
+        except Exception as e:
+            output(f'round {i} passed, error occured: {str(e)}', record)
             continue
         with open(file_name, 'r') as fin:
             lines = fin.readlines()
@@ -40,11 +40,9 @@ def run(cmd, file_name, times):
         point_sum += point
         pos_average = pos_sum / (i+1)
         point_average = point_sum / (i+1)
-        if (pos <= pos_average and pos <= 6) or pos == 1:
+        if (pos >= pos_average and pos >= 6) or pos == 1:
             with open(directory+f"/round{i}_rank{pos}.txt", 'w') as fout:
                 fout.writelines(lines)
-            with open(debuglog+f"/round{i}_debug.txt", 'w') as fout:
-                fout.write(game.read())
         output(f'round {i}, ranked {pos}, point {point}', record)
         output(f'\taverage rank {pos_average}, average point {point_average}, best rank {best_pos}',\
                 record)
