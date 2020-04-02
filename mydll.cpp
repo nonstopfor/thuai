@@ -184,6 +184,7 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//�
 }
 
 double INF = 1e10;
+double LOOSEBOUND = 10; //如果距离减10刚好追上，也尝试去追
 
 double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
 
@@ -207,7 +208,7 @@ double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
 	if (t >= t_limit) {
 		double runDist = (mySpeed - enemySpeed) * t_limit +
 			0.5 * (myAcc - enAcc) * t_limit * t_limit;
-		return runDist - distance;
+		return runDist - distance + LOOSEBOUND;
 	}
 	else {
 		double deltaT = t_limit - t;
@@ -215,7 +216,7 @@ double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
 			0.5 * (myAcc - enAcc) * t * t +
 			(myTop - enemySpeed - enAcc * t) * deltaT -
 			0.5 * enAcc * deltaT * deltaT;
-		return runDist - distance;
+		return runDist - distance + LOOSEBOUND;
 	}
 }
 double timeConsume(CellInfo me, CellInfo enemy) {
@@ -236,7 +237,7 @@ double gain_cell(CellInfo& mycell, CellInfo& enemy) {
 
 bool catchable(CellInfo me, CellInfo enemy) {
 	double reach = distAndTime(me, enemy);
-	return reach < INF - 1;
+	return reach > 0;
 }
 
 vector<int>getdangeridx(Info& info, vector<CellInfo>& myCell) {
@@ -644,24 +645,28 @@ void player_ai(Info& info)
 					double predictX = curCell.x + (maxSpeed(curCell) + 1.1 * curCell.r) * cos((double)direction / 360 * 2 * pi);
 					double predictY = curCell.y + (maxSpeed(curCell) + 1.1 * curCell.r) * sin((double)direction / 360 * 2 * pi);
 					if (predictX <= 0) {
-						if (direction < 180) direction = 180 - direction;
-						else if (direction > 180) direction = 540 - direction;
-						else direction = 90;
+						if (direction < 135) direction = 180 - direction;
+						else if (direction > 225) direction = 540 - direction;
+						else if (direction < 180) direction = 90;
+                        else direction = 270;
 					}
 					else if (predictX >= N) {
-						if (direction < 180) direction = 180 - direction;
-						else if (direction > 180) direction = 540 - direction;
-						else direction = 90;
+                        if (direction < 135) direction = 180 - direction;
+                        else if (direction > 225) direction = 540 - direction;
+                        else if (direction < 180) direction = 90;
+                        else direction = 270;
 					}
 					else if (predictY <= 0) {
-						if (direction < 270) direction = 360 - direction;
-						else if (direction > 270) direction = 360 - direction;
-						else direction = 0;
+						if (direction < 225) direction = 360 - direction;
+						else if (direction > 315) direction = 360 - direction;
+						else if (direction < 270) direction = 180;
+                        else direction = 0;
 					}
 					else if (predictY >= N) {
-						if (direction < 90) direction = 360 - direction;
-						else if (direction > 90) direction = 360 - direction;
-						else direction = 0;
+                        if (direction < 45) direction = 360 - direction;
+                        else if (direction > 135) direction = 360 - direction;
+                        else if (direction < 90) direction = 0;
+                        else direction = 180;
 					}
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tAfter Checking Boundary, direction = " << direction << endl;
