@@ -184,6 +184,7 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//�
 }
 
 double INF = 1e10;
+double LOOSEBOUND = 10; //如果距离减10刚好追上，也尝试去追
 
 double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
 
@@ -207,7 +208,7 @@ double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
 	if (t >= t_limit) {
 		double runDist = (mySpeed - enemySpeed) * t_limit +
 			0.5 * (myAcc - enAcc) * t_limit * t_limit;
-		return runDist - distance;
+		return runDist - distance + LOOSEBOUND;
 	}
 	else {
 		double deltaT = t_limit - t;
@@ -215,7 +216,7 @@ double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
 			0.5 * (myAcc - enAcc) * t * t +
 			(myTop - enemySpeed - enAcc * t) * deltaT -
 			0.5 * enAcc * deltaT * deltaT;
-		return runDist - distance;
+		return runDist - distance + LOOSEBOUND;
 	}
 }
 double timeConsume(CellInfo me, CellInfo enemy) {
@@ -236,7 +237,7 @@ double gain_cell(CellInfo& mycell, CellInfo& enemy) {
 
 bool catchable(CellInfo me, CellInfo enemy) {
 	double reach = distAndTime(me, enemy);
-	return reach > INF - 1;
+	return reach > 0;
 }
 
 vector<int>getdangeridx(Info& info, vector<CellInfo>& myCell) {
