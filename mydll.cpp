@@ -651,7 +651,7 @@ void player_ai(Info& info)
                         int direction2 = compute_dir(curCell.x, curCell.y,
                             info.cellInfo[nearest2].x, info.cellInfo[nearest2].y);
                         if (direction2 < direction - 180) direction2 += 360;
-                        if (direction2 > direction - 180) direction2 -= 360;
+                        else if (direction2 > direction - 180) direction2 -= 360;
                         direction = ((direction + direction2) / 2 + 180) % 360;
                     }
 #ifdef DEBUG
