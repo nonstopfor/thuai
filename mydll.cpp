@@ -268,7 +268,7 @@ double safe_factor_round(int round) {
 	if (round < 200) return 1.0;
 	else if (round < 500) return 1.2;
 	else if (round < 800) return 1.5;
-	else return 100;
+	else return 10000;
 }
 bool safe_cell(CellInfo me, Info& info) {
 	//判断分裂后是否安全
@@ -632,28 +632,31 @@ void player_ai(Info& info)
 					else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest]))
 						nearest = k;
 				}
-                int nearest2 = -1;//次近敌人id
-                for (int k = 0; k < info.cellInfo.size(); k++) {
-                    if (k == nearest) continue;
-                    if (info.cellInfo[k].ownerid == myID) continue;
-                    if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
-                    if (nearest2 == -1) nearest2 = k;
-                    else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest2]))
-                        nearest2 = k;
-                }
+				int nearest2 = -1;//次近敌人id
+				for (int k = 0; k < info.cellInfo.size(); k++) {
+					if (k == nearest) continue;
+					if (info.cellInfo[k].ownerid == myID) continue;
+					if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
+					if (nearest2 == -1) nearest2 = k;
+					else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest2]))
+						nearest2 = k;
+				}
 #ifdef DEBUG
 				debugInfo[cur] << "\ttargetX >= N + 1, nearest = " << nearest << " nearest2 = " << nearest2 << endl;
 #endif
 				if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
 					direction = compute_dir(curCell.x, curCell.y,
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
-                    if(nearest2 != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.3 * curCell.r){
-                        int direction2 = compute_dir(curCell.x, curCell.y,
-                            info.cellInfo[nearest2].x, info.cellInfo[nearest2].y);
-                        if (direction2 < direction - 180) direction2 += 360;
-                        else if (direction2 > direction + 180) direction2 -= 360;
-                        direction = ((direction + direction2) / 2 + 180) % 360;
-                    }
+					if (nearest2 != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.3 * curCell.r) {
+						int direction2 = compute_dir(curCell.x, curCell.y,
+							info.cellInfo[nearest2].x, info.cellInfo[nearest2].y);
+#ifdef DEBUG
+						debugInfo[cur] << "\tdirection = " << direction << " direction2 = " << direction2 << endl;
+#endif
+						if (direction2 < direction - 180) direction2 += 360;
+						else if (direction2 > direction + 180) direction2 -= 360;
+						direction = ((direction + direction2) / 2) % 360;
+					}
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
 #endif
@@ -664,25 +667,25 @@ void player_ai(Info& info)
 						if (direction < 135) direction = 180 - direction;
 						else if (direction > 225) direction = 540 - direction;
 						else if (direction < 180) direction = 90;
-                        else direction = 270;
+						else direction = 270;
 					}
 					else if (predictX >= N) {
-                        if (direction < 135) direction = 180 - direction;
-                        else if (direction > 225) direction = 540 - direction;
-                        else if (direction < 180) direction = 90;
-                        else direction = 270;
+						if (direction < 135) direction = 180 - direction;
+						else if (direction > 225) direction = 540 - direction;
+						else if (direction < 180) direction = 90;
+						else direction = 270;
 					}
 					else if (predictY <= 0) {
 						if (direction < 225) direction = 360 - direction;
 						else if (direction > 315) direction = 360 - direction;
 						else if (direction < 270) direction = 180;
-                        else direction = 0;
+						else direction = 0;
 					}
 					else if (predictY >= N) {
-                        if (direction < 45) direction = 360 - direction;
-                        else if (direction > 135) direction = 360 - direction;
-                        else if (direction < 90) direction = 0;
-                        else direction = 180;
+						if (direction < 45) direction = 360 - direction;
+						else if (direction > 135) direction = 360 - direction;
+						else if (direction < 90) direction = 0;
+						else direction = 180;
 					}
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tAfter Checking Boundary, direction = " << direction << endl;
