@@ -224,7 +224,7 @@ double timeConsume(CellInfo me, CellInfo enemy) {
 
 double gain_nutrient(CellInfo& mycell, NutrientInfo& nut) {
 	//吃营养物质的收益
-	double d = dist(mycell.x, mycell.y, nut.nux, nut.nuy) - mycell.r * 2 / 3;
+	double d = max(1e-5, dist(mycell.x, mycell.y, nut.nux, nut.nuy) - mycell.r * 2 / 3);
 	return PI * nut.nur * nut.nur / (d / 20 * mycell.r);
 }
 double gain_cell(CellInfo& mycell, CellInfo& enemy) {
@@ -610,7 +610,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-			}
+		}
 		else {
 			if (targetX < N + 1)
 			{
@@ -668,7 +668,7 @@ void player_ai(Info& info)
 #endif
 
 					info.myCommandList.addCommand(Move, curCell.id, direction);
-					}
+				}
 				else {
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
@@ -690,12 +690,12 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-					}
 				}
+			}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-				}
+	}
 
-			}
+}
