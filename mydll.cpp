@@ -139,7 +139,7 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, 20 / r + 2 * ar / 3 + min(20 / cell.r, cell.v + 10 / cell.r))) return -2;
+		if (Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 + min(20 / cell.r, cell.v + 10 / cell.r))) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
@@ -266,7 +266,8 @@ vector<int>getdangeridx(Info& info, vector<CellInfo>& myCell) {
 double safe_factor_round(int round) {
 	if (round < 200) return 1.0;
 	else if (round < 500) return 1.2;
-	else return 1.5;
+	else if (round < 800) return 1.5;
+	else return 100;
 }
 bool safe_cell(CellInfo me, Info& info) {
 	//判断分裂后是否安全
@@ -667,7 +668,7 @@ void player_ai(Info& info)
 #endif
 
 					info.myCommandList.addCommand(Move, curCell.id, direction);
-				}
+					}
 				else {
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
@@ -689,12 +690,12 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-						}
-			}
+					}
+				}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-					}
+				}
 
-					}
+			}
