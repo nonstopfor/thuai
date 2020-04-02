@@ -1,0 +1,1 @@
+python autorun.py 2020_C result.txt 100

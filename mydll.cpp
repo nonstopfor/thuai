@@ -10,7 +10,7 @@
 #include <sstream>
 using namespace std;
 
-//#define DEBUG
+#define DEBUG
 
 #define MI 23
 #define NI 19991
@@ -24,7 +24,7 @@ typedef pair<double, double> PAIR;
 基本的三个添加指令的命令
 info.myCommandList.addCommand(Division,aim_cell_id,direction);//分裂命令，第二个参数是分裂方向
 info.myCommandList.addCommand(Move,aim_cell_id,direction);//移动命令，第二个参数是移动方向
-info.myCommandList.addCommand(Spit,aim_cell_id,direction);//吞吐命令，第二个参数是吞吐方向
+info.myCommandList.addCommand(spit,aim_cell_id,direction);//吞吐命令，第二个参数是吞吐方向
 */
 
 
@@ -155,7 +155,7 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//�
 
 	double dx = tx - sx;
 	double dy = ty - sy;
-	double pi = 3.14159265;
+	double PI = 3.14159265;
 	int spike = -1;
 	for (int i = 0; i < globalInfo->spikyballInfo.size(); ++i) {
 		if (r < 0) break;
@@ -177,9 +177,9 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//�
 			}
 		}
 	}
-	int direction = (int)(atan2(dy, dx) / pi * 180 + 360) % 360;
+	int direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
 	if (spike != -1) {
-		int direction2 = (int)(atan2(globalInfo->spikyballInfo[spike].sx - sx, globalInfo->spikyballInfo[spike].sy - sy) / pi * 180 + 360) % 360;
+		int direction2 = (int)(atan2(globalInfo->spikyballInfo[spike].sx - sx, globalInfo->spikyballInfo[spike].sy - sy) / PI * 180 + 360) % 360;
 		if (direction2 < direction - 180) direction2 += 360;
 		else if (direction2 > direction + 180) direction2 -= 360;
 		if (direction2 < direction) direction = direction2 + 90;
@@ -235,11 +235,13 @@ double gain_nutrient(CellInfo& mycell, NutrientInfo& nut) {
 	double d = max(1e-5, dist(mycell.x, mycell.y, nut.nux, nut.nuy) - mycell.r * 2 / 3);
 	return PI * nut.nur * nut.nur / (d / 20 * mycell.r);
 }
-double gain_cell(CellInfo& mycell, CellInfo& enemy) {
+
+double gain_increase = 10;
+double gain_cell(CellInfo& mycell, CellInfo& enemy, int num) {
 	//double d = dist(mycell.x, mycell.y, enemy.x, enemy.y) - mycell.r * 2 / 3;
 	double t = timeConsume(mycell, enemy);
 	//cout << "timeConsume: " << t << endl;
-	return (PI * enemy.r * enemy.r + 500) / timeConsume(mycell, enemy);
+	return (PI * enemy.r * enemy.r + 500) / timeConsume(mycell, enemy) + exp(num * num) * gain_increase;
 }
 
 bool catchable(CellInfo me, CellInfo enemy) {
@@ -295,7 +297,9 @@ bool safe_cell(CellInfo me, Info& info) {
 	}
 	return true;
 }
-
+double get_danger_dist(CellInfo me, CellInfo enemy) {
+	return distCell(me, enemy) - 2.5 * (20 / enemy.r) - 2 * enemy.r / 3;
+}
 
 void player_ai(Info& info)
 {
@@ -332,10 +336,102 @@ void player_ai(Info& info)
 
 	vector<bool>vis(info.nutrientInfo.size(), false);
 	vector<int>dangercell_idx = getdangeridx(info, myCell);
+	vector<int>cell_clamp(info.cellInfo.size(), 0);
+	//先计算出对方细胞被几个我方细胞包围
+	for (int i = 0; i < info.cellInfo.size(); ++i) {
+		auto& cell = info.cellInfo[i];
+		if (cell.ownerid == myID) continue;
+		for (int j = 0; j < info.cellInfo.size(); ++j) {
+			auto& me = info.cellInfo[j];
+			if (me.ownerid != myID) continue;
+			if (cell.r / me.r >= lam) continue;
+			if (distCell(me, cell) <= cell.r) cell_clamp[i]++;
+		}
+	}
 
 	for (int cur = 0; cur < myCell.size(); cur++)
 	{
 		CellInfo& curCell = myCell[cur];
+		int direction = 0;
+
+		//先检查是否需要逃跑
+		{
+			int nearest = -1;//最近敌人id
+			for (int k = 0; k < info.cellInfo.size(); k++) {
+				if (info.cellInfo[k].ownerid == myID) continue;
+				if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
+				if (get_danger_dist(curCell, info.cellInfo[k]) > 0) continue;
+				if (nearest == -1) nearest = k;
+				else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest]))
+					nearest = k;
+			}
+			int nearest2 = -1;//次近敌人id
+			for (int k = 0; k < info.cellInfo.size(); k++) {
+				if (k == nearest) continue;
+				if (info.cellInfo[k].ownerid == myID) continue;
+				if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
+				if (get_danger_dist(curCell, info.cellInfo[k]) > 0) continue;
+				if (nearest2 == -1) nearest2 = k;
+				else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest2]))
+					nearest2 = k;
+			}
+#ifdef DEBUG
+			debugInfo[cur] << "\ttargetX >= N + 1, nearest = " << nearest << " nearest2 = " << nearest2 << endl;
+#endif
+			if (nearest != -1) {
+				direction = compute_dir(curCell.x, curCell.y,
+					info.cellInfo[nearest].x, info.cellInfo[nearest].y);
+				if (nearest2 != -1) {
+					int direction2 = compute_dir(curCell.x, curCell.y,
+						info.cellInfo[nearest2].x, info.cellInfo[nearest2].y);
+#ifdef DEBUG
+					debugInfo[cur] << "\tdirection = " << direction << " direction2 = " << direction2 << endl;
+#endif
+
+					if (direction2 < direction - 180) direction2 += 360;
+					else if (direction2 > direction + 180) direction2 -= 360;
+					direction = ((direction + direction2) / 2 + 360) % 360;
+				}
+#ifdef DEBUG
+				debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
+#endif
+				//开始判断撞边
+				double predictX = curCell.x + (maxSpeed(curCell) + 1.1 * curCell.r) * cos((double)direction / 360 * 2 * PI);
+				double predictY = curCell.y + (maxSpeed(curCell) + 1.1 * curCell.r) * sin((double)direction / 360 * 2 * PI);
+				if (predictX <= 0) {
+					if (direction < 135) direction = 180 - direction;
+					else if (direction > 225) direction = 540 - direction;
+					else if (direction < 180) direction = 90;
+					else direction = 270;
+				}
+				else if (predictX >= N) {
+					if (direction > 315) direction = 270;
+					else if (direction > 180) direction = 540 - direction;
+					else if (direction > 45) direction = 180 - direction;
+					else direction = 90;
+
+				}
+				else if (predictY <= 0) {
+					if (direction < 225) direction = 360 - direction;
+					else if (direction > 315) direction = 360 - direction;
+					else if (direction < 270) direction = 180;
+					else direction = 0;
+				}
+				else if (predictY >= N) {
+					if (direction < 45) direction = 360 - direction;
+					else if (direction > 135) direction = 360 - direction;
+					else if (direction < 90) direction = 0;
+					else direction = 180;
+				}
+#ifdef DEBUG
+				debugInfo[cur] << "\t\tAfter Checking Boundary, direction = " << direction << endl;
+#endif
+
+				info.myCommandList.addCommand(Move, curCell.id, direction);
+				continue;
+			}
+		}
+
 		int split = splitCheck(myCell, maxCell, dangercell_idx, cur, info.round);
 		//int split = splitCheck(myCell, maxCell, cur, info.round, info.cellInfo[nearestEnemy]);
 		double targetX = 10000, targetY = 10000;
@@ -383,8 +479,8 @@ void player_ai(Info& info)
 				}
 			}
 			sort(cell_idx.begin(), cell_idx.end(), [&](int a, int b) {
-				double g1 = gain_cell(curCell, info.cellInfo[a]);
-				double g2 = gain_cell(curCell, info.cellInfo[b]);
+				double g1 = gain_cell(curCell, info.cellInfo[a], cell_clamp[a]);
+				double g2 = gain_cell(curCell, info.cellInfo[b], cell_clamp[b]);
 				return g1 > g2;
 				});
 
@@ -394,7 +490,7 @@ void player_ai(Info& info)
 				double gain_2 = 0;//分裂的最大收益
 				double tx1 = 0, ty1 = 0;//不分裂时目标位置
 				double tx2 = 0, ty2 = 0;//分裂时冲向的目标位置
-				double gain_1_cell = cell_idx.empty() ? -1 : gain_cell(curCell, info.cellInfo[cell_idx[0]]);
+				double gain_1_cell = cell_idx.empty() ? -1 : gain_cell(curCell, info.cellInfo[cell_idx[0]], cell_clamp[cell_idx[0]]);
 				double gain_1_nut = nutrient_idx.empty() ? -1 : gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]]);
 				if (gain_1_nut > gain_1_cell) {
 					gain_1 = gain_1_nut;
@@ -425,7 +521,7 @@ void player_ai(Info& info)
 					auto& cell = info.cellInfo[cell_idx[k]];
 					if (cell.r / (curCell.r / sqrt(2)) >= lam) continue;
 
-					tmp.push_back(p(gain_cell(curCell, cell), cell.x, cell.y));
+					tmp.push_back(p(gain_cell(curCell, cell, cell_clamp[cell_idx[k]]), cell.x, cell.y));
 					if (++cnt > 1) break;
 				}
 				sort(tmp.begin(), tmp.end());
@@ -448,100 +544,10 @@ void player_ai(Info& info)
 					targetX = tx1;
 					targetY = ty1;
 				}
-				/*
-				if (!nutrient_idx.empty()) {
-					// Todo: 更精细的设计
-					double gain_1 = 0;//不分裂的最大收益
-					double gain_2 = 0;//分裂的最大收益
-					double tx1 = 0, ty1 = 0;//不分裂时目标位置
-					double tx2 = 0, ty2 = 0;//分裂时冲向的目标位置
-					double gain_1_cell = cell_idx.empty() ? -1 : gain_cell(curCell, info.cellInfo[cell_idx[0]]);
-					double gain_1_nut = gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]]);
-					if (gain_1_nut > gain_1_cell) {
-						gain_1 = gain_1_nut;
-						tx1 = info.nutrientInfo[nutrient_idx[0]].nux;
-						ty1 = info.nutrientInfo[nutrient_idx[0]].nuy;
-					}
-					else {
-						gain_1 = gain_1_cell;
-						tx1 = info.cellInfo[cell_idx[0]].x;
-						ty1 = info.cellInfo[cell_idx[0]].y;
-					}
-					struct p {
-						double gain;
-						double x;
-						double y;
-						p(double _gain, double _x, double _y) :gain(_gain), x(_x), y(_y) {}
-						bool operator<(const p& t) {
-							return gain > t.gain;
-						}
-					};
-					vector<p>tmp;
-					for (int k = 0; k < min((int)nutrient_idx.size(), 2); ++k) {
-						auto& nut = info.nutrientInfo[nutrient_idx[k]];
-						tmp.push_back(p(gain_nutrient(curCell, nut), nut.nux, nut.nuy));
-					}
-					int cnt = 0;
-					for (int k = 0; k < cell_idx.size(); ++k) {
-						auto& cell = info.cellInfo[cell_idx[k]];
-						if (cell.r / (curCell.r / sqrt(2)) >= lam) continue;
-
-						tmp.push_back(p(gain_cell(curCell, cell), cell.x, cell.y));
-						if (++cnt > 1) break;
-					}
-					sort(tmp.begin(), tmp.end());
-					cout << info.round << ": " << tmp.size() << endl;
-					if (tmp.size() > 1) {
-						gain_2 = tmp[0].gain + tmp[1].gain;
-						if (gain_2 > gain_1) {
-							int dir1 = compute_dir(tmp[0].x, tmp[0].y, curCell.x, curCell.y);
-							info.myCommandList.addCommand(Division, curCell.id, dir1);
-							continue;
-						}
-						else {
-							if (gain_1_nut > gain_1_cell) vis[nutrient_idx[0]] = true;
-							targetX = tx1;
-							targetY = ty1;
-						}
-					}
-					else {
-						gain_2 = tmp[0].gain;//此时tmp里面必然是第一个营养物质
-						if (gain_2 > gain_1) {
-							vis[nutrient_idx[0]] = true;
-							targetX = tmp[0].x;
-							targetY = tmp[0].y;
-						}
-						else {
-							if (gain_1_nut > gain_1_cell) vis[nutrient_idx[0]] = true;
-							targetX = tx1;
-							targetY = ty1;
-						}
-					}
-
-				}
-				else {
-					bool flag = false;
-					for (int k = 0; k < cell_idx.size(); ++k) {
-						auto& cell = info.cellInfo[cell_idx[k]];
-						if (cell.r / (curCell.r / sqrt(2)) < 0.7 * lam) {
-							cout << "Division for cell" << endl;
-							int dir1 = compute_dir(cell.x, cell.y, curCell.x, curCell.y);
-							info.myCommandList.addCommand(Division, curCell.id, dir1);
-							flag = true;
-							break;
-						}
-					}
-					if (!flag) {
-						int dir1 = compute_dir(info.cellInfo[cell_idx[0]].x, info.cellInfo[cell_idx[0]].y, curCell.x, curCell.y);
-						info.myCommandList.addCommand(Move, curCell.id, dir1);
-					}
-					continue;
-				}
-				*/
 			}
 			else if (cell_idx.size() + nutrient_idx.size() > 0) {
 				double max_gain_nut = nutrient_idx.empty() ? -1 : gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]]);
-				double max_gain_cell = cell_idx.empty() ? -1 : gain_cell(curCell, info.cellInfo[cell_idx[0]]);
+				double max_gain_cell = cell_idx.empty() ? -1 : gain_cell(curCell, info.cellInfo[cell_idx[0]], cell_clamp[cell_idx[0]]);
 				if (max_gain_nut > max_gain_cell) {
 					vis[nutrient_idx[0]] = true;
 					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
@@ -594,8 +600,6 @@ void player_ai(Info& info)
 #endif
 
 		}
-		int direction = 0;
-		double pi = 3.14159265;
 
 		if (info.round > 800 && cur == maxCell) {
 			int nearest = -1;//最近敌人id
@@ -618,7 +622,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-			}
+		}
 		else {
 			if (targetX < N + 1)
 			{
@@ -669,8 +673,8 @@ void player_ai(Info& info)
 					debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
 #endif
 					//开始判断撞边
-					double predictX = curCell.x + (maxSpeed(curCell) + 1.1 * curCell.r) * cos((double)direction / 360 * 2 * pi);
-					double predictY = curCell.y + (maxSpeed(curCell) + 1.1 * curCell.r) * sin((double)direction / 360 * 2 * pi);
+					double predictX = curCell.x + (maxSpeed(curCell) + 1.1 * curCell.r) * cos((double)direction / 360 * 2 * PI);
+					double predictY = curCell.y + (maxSpeed(curCell) + 1.1 * curCell.r) * sin((double)direction / 360 * 2 * PI);
 					if (predictX <= 0) {
 						if (direction < 135) direction = 180 - direction;
 						else if (direction > 225) direction = 540 - direction;
@@ -678,10 +682,11 @@ void player_ai(Info& info)
 						else direction = 270;
 					}
 					else if (predictX >= N) {
-						if (direction < 135) direction = 180 - direction;
-						else if (direction > 225) direction = 540 - direction;
-						else if (direction < 180) direction = 90;
-						else direction = 270;
+						if (direction > 315) direction = 270;
+						else if (direction > 180) direction = 540 - direction;
+						else if (direction > 45) direction = 180 - direction;
+						else direction = 90;
+
 					}
 					else if (predictY <= 0) {
 						if (direction < 225) direction = 360 - direction;
@@ -700,15 +705,15 @@ void player_ai(Info& info)
 #endif
 
 					info.myCommandList.addCommand(Move, curCell.id, direction);
-					}
+				}
 				else {
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
 #endif
 					bool flag = false;
 					for (double angle = 0; angle < 360; angle += 1) {
-						double dx = cos(angle / 360 * 2 * pi) * N;
-						double dy = sin(angle / 360 * 2 * pi) * N;
+						double dx = cos(angle / 360 * 2 * PI) * N;
+						double dy = sin(angle / 360 * 2 * PI) * N;
 						if (safe(info, curCell.x, curCell.y, curCell.r, curCell.x + dx, curCell.y + dy) == -1) {
 							direction = compute_dir(curCell.x + dx, curCell.y + dy, curCell.x, curCell.y, curCell.r);
 							info.myCommandList.addCommand(Move, curCell.id, direction);
@@ -722,12 +727,12 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-					}
-					}
+				}
+			}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-				}
+	}
 
-				}
+}
