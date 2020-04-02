@@ -44,7 +44,7 @@ double distCell(CellInfo c1, CellInfo c2, bool removeRadius = false) {
 	return distRaw;
 }
 
-double MINBOUND = 0.2;
+double MINBOUND = 0.1;
 double MAXDIST = 425;
 double UNIONDIST = 60; // if too far away from ally big cells, don't union
 double DISTFACTOR = 1.1;
