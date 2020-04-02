@@ -631,12 +631,28 @@ void player_ai(Info& info)
 					else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest]))
 						nearest = k;
 				}
+                int nearest2 = -1;//次近敌人id
+                for (int k = 0; k < info.cellInfo.size(); k++) {
+                    if (k == nearest) continue;
+                    if (info.cellInfo[k].ownerid == myID) continue;
+                    if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
+                    if (nearest2 == -1) nearest2 = k;
+                    else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest2]))
+                        nearest2 = k;
+                }
 #ifdef DEBUG
-				debugInfo[cur] << "\ttargetX >= N + 1, nearest = " << nearest << endl;
+				debugInfo[cur] << "\ttargetX >= N + 1, nearest = " << nearest << " nearest2 = " << nearest2 << endl;
 #endif
 				if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
 					direction = compute_dir(curCell.x, curCell.y,
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
+                    if(nearest2 != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.3 * curCell.r){
+                        int direction2 = compute_dir(curCell.x, curCell.y,
+                            info.cellInfo[nearest2].x, info.cellInfo[nearest2].y);
+                        if (direction2 < direction - 180) direction2 += 360;
+                        if (direction2 > direction - 180) direction2 -= 360;
+                        direction = ((direction + direction2) / 2 + 180) % 360;
+                    }
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
 #endif
