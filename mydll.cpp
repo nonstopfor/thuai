@@ -139,7 +139,7 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, 20 / r + 2 * ar / 3 + min(20 / cell.r, cell.v + 10 / cell.r))) return -2;
+		if (Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 + min(20 / cell.r, cell.v + 10 / cell.r))) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
@@ -224,7 +224,7 @@ double timeConsume(CellInfo me, CellInfo enemy) {
 
 double gain_nutrient(CellInfo& mycell, NutrientInfo& nut) {
 	//吃营养物质的收益
-	double d = dist(mycell.x, mycell.y, nut.nux, nut.nuy) - mycell.r * 2 / 3;
+	double d = max(1e-5, dist(mycell.x, mycell.y, nut.nux, nut.nuy) - mycell.r * 2 / 3);
 	return PI * nut.nur * nut.nur / (d / 20 * mycell.r);
 }
 double gain_cell(CellInfo& mycell, CellInfo& enemy) {
@@ -266,7 +266,8 @@ vector<int>getdangeridx(Info& info, vector<CellInfo>& myCell) {
 double safe_factor_round(int round) {
 	if (round < 200) return 1.0;
 	else if (round < 500) return 1.2;
-	else return 1.5;
+	else if (round < 800) return 1.5;
+	else return 100;
 }
 bool safe_cell(CellInfo me, Info& info) {
 	//判断分裂后是否安全
@@ -609,7 +610,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-			}
+		}
 		else {
 			if (targetX < N + 1)
 			{
@@ -689,12 +690,12 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-						}
+				}
 			}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-					}
+	}
 
-					}
+}
