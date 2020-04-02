@@ -161,10 +161,11 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//ç®
         auto& t = globalInfo->spikyballInfo[i];
         double x = t.sx, y = t.sy;
         double ar = t.sr;
+        if (ar > r) continue;
         auto p3 = make_pair(x, y);
         auto p1 = make_pair(sx, sy);
         auto p2 = make_pair(tx, ty);
-        if (Judis(p1, p2, p3, ar + r)) {// find nearest spike
+        if (Judis(p1, p2, p3, ar + r * 1.1)) {// find nearest spike
             if (spike == -1)
                 spike = i;
             else {
@@ -177,8 +178,12 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//ç®
     }
     int direction = (int)(atan2(dy, dx) / pi * 180 + 360) % 360;
     if (spike != -1) {
-        direction += 90;
-        direction %= 360;
+        int direction2 = (int)(atan2(globalInfo->spikyballInfo[spike].sx - sx, globalInfo->spikyballInfo[spike].sy - sy) / pi * 180 + 360) % 360;
+        if (direction2 < direction - 180) direction2 += 360;
+        else if (direction2 > direction + 180) direction2 -= 360;
+        if (direction2 < direction) direction = direction2 + 90;
+        else direction = direction2 - 90;
+        direction = (direction + 360) % 360;
     }
     return direction;
 }
@@ -655,7 +660,7 @@ void player_ai(Info& info)
 #endif
                         if (direction2 < direction - 180) direction2 += 360;
                         else if (direction2 > direction + 180) direction2 -= 360;
-                        direction = ((direction + direction2) / 2 ) % 360;
+                        direction = ((direction + direction2) / 2 + 360) % 360;
                     }
 #ifdef DEBUG
                     debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
