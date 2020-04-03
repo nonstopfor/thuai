@@ -37,19 +37,19 @@ def run(cmd, file_name, times):
         with open(file_name, 'r') as fin:
             lines = fin.readlines()
             for j in range(len(players_pos)):
-                players_pos[j] = int(lines[j-16].split(' ')[2])
-                players_point[j] = int(lines[j-16].split(' ')[3])
-                players_pos_sum[j] += players_pos[j]
-                players_point_sum[j] += players_point[j]
+                pos = int(lines[j-16].split(' ')[2])
+                point = int(lines[j-16].split(' ')[3])
+                players_pos_sum[j] += pos
+                players_point_sum[j] += point
                 if players_pos[j] < players_best_pos[j]:
                     players_best_pos[j] = players_pos[j]
                 pos_average = players_pos_sum[j] / (i+1)
                 point_average = players_point_sum[j] / (i+1)
                 best_pos = players_best_pos[j]
-                if (j == 15 and ((pos >= pos_average and pos >= 6) or pos == 1))
+                if (j == 15 and ((pos >= pos_average and pos >= 6) or pos == 1)):
                     with open(directory+f"/round{i}_rank{pos}.txt", 'w') as fout:
                         fout.writelines(lines)
-                output(f'player {j}: round {i}, ranked {players_pos[j]}, point {players_point[j]}', record)
+                output(f'player {j}: round {i}, ranked {pos}, point {point}', record)
                 output(f'\taverage rank {pos_average}, average point {point_average}, best rank {best_pos}',\
                 record)
     record.close()
