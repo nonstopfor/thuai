@@ -41,7 +41,7 @@ def run(cmd, file_name, times):
                 point = int(lines[j-16].split(' ')[3])
                 players_pos_sum[j] += pos
                 players_point_sum[j] += point
-                if players_pos[j] < players_best_pos[j]:
+                if pos < players_best_pos[j]:
                     players_best_pos[j] = players_pos[j]
                 pos_average = players_pos_sum[j] / (i+1)
                 point_average = players_point_sum[j] / (i+1)
