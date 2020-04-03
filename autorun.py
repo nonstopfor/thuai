@@ -23,6 +23,11 @@ def run(cmd, file_name, times):
     mkdir(directory)
     debuglog = 'debuglog'
     mkdir(debuglog)
+    players_pos = [0 for i in range(16)]
+    players_point = list(players_pos)
+    players_pos_sum = list(players_pos)
+    players_point_sum = list(players_pos)
+    players_best_pos = [20 for i in range(16)]
     for i in range(times):
         try:
             os.system(cmd+" >> "+ debuglog+f"/round{i}_debug.txt")
@@ -31,25 +36,22 @@ def run(cmd, file_name, times):
             continue
         with open(file_name, 'r') as fin:
             lines = fin.readlines()
-            result = lines[-1].split(' ')
-            pos = int(result[2])
-            if pos < best_pos:
-                best_pos = pos
-            point = int(result[3])
-        pos_sum += pos
-        point_sum += point
-        pos_average = pos_sum / (i+1)
-        point_average = point_sum / (i+1)
-        if (pos >= pos_average and pos >= 6) or pos == 1:
-            with open(directory+f"/round{i}_rank{pos}.txt", 'w') as fout:
-                fout.writelines(lines)
-        output(f'round {i}, ranked {pos}, point {point}', record)
-        output(f'\taverage rank {pos_average}, average point {point_average}, best rank {best_pos}',\
+            for j in range(len(players_pos)):
+                players_pos[j] = int(lines[j-16].split(' ')[2])
+                players_point[j] = int(lines[j-16].split(' ')[3])
+                players_pos_sum[j] += players_pos[j]
+                players_point_sum[j] += players_point[j]
+                if players_pos[j] < players_best_pos[j]:
+                    players_best_pos[j] = players_pos[j]
+                pos_average = players_pos_sum[j] / (i+1)
+                point_average = players_point_sum[j] / (i+1)
+                best_pos = players_best_pos[j]
+                if (j == 15 and ((pos >= pos_average and pos >= 6) or pos == 1))
+                    with open(directory+f"/round{i}_rank{pos}.txt", 'w') as fout:
+                        fout.writelines(lines)
+                output(f'player {j}: round {i}, ranked {players_pos[j]}, point {players_point[j]}', record)
+                output(f'\taverage rank {pos_average}, average point {point_average}, best rank {best_pos}',\
                 record)
-    pos_average = pos_sum / times
-    point_average = point_sum / times
-    output(f'final average rank {pos_average}, average point {point_average}, best rank {best_pos}',\
-            record)
     record.close()
 
 if __name__ == "__main__":
