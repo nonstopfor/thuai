@@ -290,7 +290,7 @@ bool safe_cell(CellInfo me, Info& info) {
 		double d = distCell(me, cell, true);
 
 		if (d < 0.85 * safe_factor_round(info.round) * me.r || (d < 1.3 * safe_factor_round(info.round) * me.r && catchable(cell, me))) {
-			cout << info.round << " d and me.r cell.r: " << d << ' ' << me.r << ' ' << cell.r << endl;
+			//cout << info.round << " d and me.r cell.r: " << d << ' ' << me.r << ' ' << cell.r << endl;
 			return false;
 		}
 
@@ -526,7 +526,7 @@ void player_ai(Info& info)
 					if (++cnt > 1) break;
 				}
 				sort(tmp.begin(), tmp.end());
-				cout << info.round << ": " << tmp.size() << endl;
+				//cout << info.round << ": " << tmp.size() << endl;
 				if (tmp.size() > 1) {
 					gain_2 = tmp[0].gain + tmp[1].gain;
 					if (gain_2 > gain_1) {
