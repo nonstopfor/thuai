@@ -12,6 +12,7 @@ def output(s, fout):
     print(s)
     fout.write(s+'\n')
     fout.flush()
+    sys.stdout.flush()
 
 def run(cmd, file_name, times):
     times = int(times)
