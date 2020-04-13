@@ -347,37 +347,41 @@ void player_ai(Info& info)
 			if (distCell(me, cell) <= cell.r) cell_clamp[i]++;
 		}
 	}
-
+	int cell_num = myCell.size();
 	for (int cur = 0; cur < myCell.size(); cur++)
 	{
 		CellInfo& curCell = myCell[cur];
 		int direction = 0;
 		//先判断能否分裂直接吃细胞
-		bool div_eat = false;
-		int div_select = -1;
-		double max_r = 0.0;
-		for (int i = 0; i < info.cellInfo.size(); ++i) {
-			auto& cell = info.cellInfo[i];
-			if (cell.ownerid == myID) continue;
-			if (cell.r / (curCell.r / (sqrt(2.0))) >= lam) continue;
-			double d = distCell(curCell, cell);
-			if (d < (1.2 + (2.0 / 3)) * curCell.r / sqrt(2.0)) {
-				if (cell.r > max_r) {
-					max_r = cell.r;
-					div_select = i;
-					div_eat = true;
+		if (cell_num < 6) {
+			bool div_eat = false;
+			int div_select = -1;
+			double max_r = 0.0;
+			for (int i = 0; i < info.cellInfo.size(); ++i) {
+				auto& cell = info.cellInfo[i];
+				if (cell.ownerid == myID) continue;
+				if (cell.r / (curCell.r / (sqrt(2.0))) >= lam) continue;
+				double d = distCell(curCell, cell);
+				if (d < (1.2 + (2.0 / 3)) * curCell.r / sqrt(2.0)) {
+					if (cell.r > max_r) {
+						max_r = cell.r;
+						div_select = i;
+						div_eat = true;
+					}
+
 				}
-				
+			}
+			if (div_eat) {
+				auto& cell = info.cellInfo[div_select];
+				double dx = cell.x - curCell.x;
+				double dy = cell.y - curCell.y;
+				direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
+				info.myCommandList.addCommand(Division, curCell.id, direction);
+				cell_num++;
+				continue;
 			}
 		}
-		if (div_eat) {
-			auto& cell = info.cellInfo[div_select];
-			double dx = cell.x - curCell.x;
-			double dy = cell.y - curCell.y;
-			direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
-			info.myCommandList.addCommand(Division, curCell.id, direction);
-			continue;
-		}
+
 		//先检查是否需要逃跑
 		{
 			int nearest = -1;//最近敌人id
@@ -495,7 +499,7 @@ void player_ai(Info& info)
 				double t = 1 - sqrt(2) / 3;
 				if (min(abs(k.x), abs(N - k.x)) <= curCell.r * t) continue;
 				if (min(abs(k.y), abs(N - k.y)) <= curCell.r * t) continue;
-			    if (!catchable(curCell, info.cellInfo[j])) continue;
+				if (!catchable(curCell, info.cellInfo[j])) continue;
 				//if (distCell(curCell, info.cellInfo[j]) > 1.5 * info.cellInfo[j].r) continue;
 				int w = safe(info, curCell.x, curCell.y, curCell.r, k.x, k.y);
 				if (w != -2) {
@@ -510,7 +514,7 @@ void player_ai(Info& info)
 				});
 
 
-			if (myCell.size() < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell, info) && cell_idx.size() + nutrient_idx.size() > 1) {
+			if (cell_num < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell, info) && cell_idx.size() + nutrient_idx.size() > 1) {
 				double gain_1 = 0;//不分裂的最大收益
 				double gain_2 = 0;//分裂的最大收益
 				double tx1 = 0, ty1 = 0;//不分裂时目标位置
@@ -531,7 +535,8 @@ void player_ai(Info& info)
 					double gain;
 					double x;
 					double y;
-					p(double _gain, double _x, double _y) :gain(_gain), x(_x), y(_y) {}
+					int idx = -1;//如果是营养物质，idx就不为-1，便于标记vis
+					p(double _gain, double _x, double _y, int _idx = -1) :gain(_gain), x(_x), y(_y), idx(_idx) {}
 					bool operator<(const p& t) {
 						return gain > t.gain;
 					}
@@ -539,7 +544,7 @@ void player_ai(Info& info)
 				vector<p>tmp;
 				for (int k = 0; k < min((int)nutrient_idx.size(), 2); ++k) {
 					auto& nut = info.nutrientInfo[nutrient_idx[k]];
-					tmp.push_back(p(gain_nutrient(curCell, nut), nut.nux, nut.nuy));
+					tmp.push_back(p(gain_nutrient(curCell, nut), nut.nux, nut.nuy, nutrient_idx[k]));
 				}
 				int cnt = 0;
 				for (int k = 0; k < cell_idx.size(); ++k) {
@@ -556,6 +561,9 @@ void player_ai(Info& info)
 					if (gain_2 > gain_1) {
 						int dir1 = compute_dir(tmp[0].x, tmp[0].y, curCell.x, curCell.y);
 						info.myCommandList.addCommand(Division, curCell.id, dir1);
+						cell_num++;
+						if (tmp[0].idx != -1) vis[tmp[0].idx] = true;
+						if (tmp[1].idx != -1) vis[tmp[1].idx] = true;
 						continue;
 					}
 					else {
@@ -647,7 +655,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-		}
+			}
 		else {
 			if (targetX < N + 1)
 			{
@@ -730,7 +738,7 @@ void player_ai(Info& info)
 #endif
 
 					info.myCommandList.addCommand(Move, curCell.id, direction);
-				}
+					}
 				else {
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
@@ -752,12 +760,12 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-				}
-			}
+					}
+					}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-	}
+				}
 
-}
+				}
