@@ -16,6 +16,7 @@ def output(s, fout):
 
 def run(cmd, file_name, times):
     times = int(times)
+    ori_cmd_file = str(file_name).replace('result', 'Original_command')
     pos_sum = 0
     best_pos = 15
     point_sum = 0
@@ -50,6 +51,9 @@ def run(cmd, file_name, times):
                 if (j == 15 and ((pos >= pos_average and pos >= 6) or pos == 1)):
                     with open(directory+f"/round{i}_rank{pos}.txt", 'w') as fout:
                         fout.writelines(lines)
+                    with open(ori_cmd_file, 'r') as cmd_fin:
+                        with open(debuglog+f'/round{i}_Original_command.txt', 'w') as cmd_fout:
+                            cmd_fout.write(cmd_fin.read())
                 output(f'player {j}: round {i}, ranked {pos}, point {point}', record)
                 output(f'\taverage rank {pos_average}, average point {point_average}, best rank {best_pos}',\
                 record)
