@@ -155,7 +155,6 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//�
 
 	double dx = tx - sx;
 	double dy = ty - sy;
-	double PI = 3.14159265;
 	int spike = -1;
 	for (int i = 0; i < globalInfo->spikyballInfo.size(); ++i) {
 		if (r < 0) break;
@@ -353,7 +352,32 @@ void player_ai(Info& info)
 	{
 		CellInfo& curCell = myCell[cur];
 		int direction = 0;
-
+		//先判断能否分裂直接吃细胞
+		bool div_eat = false;
+		int div_select = -1;
+		double max_r = 0.0;
+		for (int i = 0; i < info.cellInfo.size(); ++i) {
+			auto& cell = info.cellInfo[i];
+			if (cell.ownerid == myID) continue;
+			if (cell.r / (curCell.r / (sqrt(2.0))) >= lam) continue;
+			double d = distCell(curCell, cell);
+			if (d < (1.2 + (2.0 / 3)) * curCell.r / sqrt(2.0)) {
+				if (cell.r > max_r) {
+					max_r = cell.r;
+					div_select = i;
+					div_eat = true;
+				}
+				
+			}
+		}
+		if (div_eat) {
+			auto& cell = info.cellInfo[div_select];
+			double dx = cell.x - curCell.x;
+			double dy = cell.y - curCell.y;
+			direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
+			info.myCommandList.addCommand(Division, curCell.id, direction);
+			continue;
+		}
 		//先检查是否需要逃跑
 		{
 			int nearest = -1;//最近敌人id
