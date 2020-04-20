@@ -302,6 +302,8 @@ double get_danger_dist(CellInfo me, CellInfo enemy) {
 
 void player_ai(Info& info)
 {
+	double start_time = clock();
+	//cout << "start!" << endl;
 	globalInfo = &info;
 
 	vector<CellInfo> myCell;
@@ -655,7 +657,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-			}
+		}
 		else {
 			if (targetX < N + 1)
 			{
@@ -738,7 +740,7 @@ void player_ai(Info& info)
 #endif
 
 					info.myCommandList.addCommand(Move, curCell.id, direction);
-					}
+				}
 				else {
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
@@ -760,12 +762,15 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-					}
-					}
+				}
+			}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-				}
+	}
 
-				}
+	double end_time = clock();
+
+	cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
+}
