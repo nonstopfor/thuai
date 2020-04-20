@@ -50,14 +50,24 @@ double UNIONDIST = 60; // if too far away from ally big cells, don't union
 double DISTFACTOR = 1.1;
 int DISASTERROUND = 700;
 int HELP_RANGE = 50;
+int MAX_CELL_NUM = 12;
 int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cellsIndanger, int curCell,
 	int round) {
 
+	double minR = 1000;
+	int minRIndex = -1;
+	for (int i = 0; i < cells.size(); ++i) {	//找到最小半径的己方细胞
+		if (minR > cells[i].r) {
+			minR = cells[i].r;
+			minRIndex = i;
+		}
+	}
 	double maxR = cells[maxCell].r;
-	//double enemyR = nearestEnemy.r;
 	bool minboundJudge = cells[curCell].r > MINBOUND * maxR;
 	bool roundJudge = round < DISASTERROUND || curCell == maxCell;
 	bool enemyJudge = cellsIndanger.size() == 0;//maxR > 0.9 * enemyR;
+	//如果到12上限则最小的细胞向最近的己方细胞合并
+	bool maxCellNumJudge = cells.size() < MAX_CELL_NUM || curCell != minRIndex;
 	if (!enemyJudge) {
 		enemyJudge = true;
 		for (int i = 0; i < cellsIndanger.size(); ++i) {
@@ -74,13 +84,8 @@ int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cell
 				enemyJudge = false;
 			}
 		}
-		/*double distToEnemy = dist(
-			cells[curCell].x, cells[curCell].y,
-			nearestEnemy.x, nearestEnemy.y
-		);
-		enemyJudge = distToEnemy > DISTFACTOR * (maxR + enemyR); //max cell is still far from enemy*/
 	}
-	if (minboundJudge && roundJudge && enemyJudge)
+	if (minboundJudge && roundJudge && enemyJudge && maxCellNumJudge)
 		return -1;
 	int target = -1;
 	double minDist = MAXDIST;
