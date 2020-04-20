@@ -50,7 +50,7 @@ double UNIONDIST = 60; // if too far away from ally big cells, don't union
 double DISTFACTOR = 1.1;
 int DISASTERROUND = 700;
 int HELP_RANGE = 100;
-int MAX_CELL_NUM = 12;
+int MAX_CELL_NUM = 20;
 int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cellsIndanger, int curCell,
 	int round) {
 
@@ -302,7 +302,7 @@ bool safe_cell(CellInfo me, Info& info) {
 	return true;
 }
 double get_danger_dist(CellInfo me, CellInfo enemy) {
-	return distCell(me, enemy) - 2.5 * (20 / enemy.r) - 2 * enemy.r / 3;
+	return distCell(me, enemy) - 1.5 * min(20 / enemy.r, enemy.v + 10 / enemy.r) - 2 * enemy.r / 3;
 }
 
 void player_ai(Info& info)
