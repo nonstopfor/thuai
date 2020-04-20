@@ -25,11 +25,13 @@ def run(cmd, file_name, times):
     mkdir(directory)
     debuglog = 'debuglog'
     mkdir(debuglog)
+    POS_AWARD = [20] + [15-i for i in range(15)]
     players_pos = [0 for i in range(16)]
     players_point = list(players_pos)
     players_pos_sum = list(players_pos)
     players_point_sum = list(players_pos)
     players_best_pos = [20 for i in range(16)]
+    players_pos_award = list(players_pos)
     for i in range(times):
         try:
             os.system(cmd+" >> "+ debuglog+f"/round{i}_debug.txt")
@@ -43,6 +45,7 @@ def run(cmd, file_name, times):
                 point = int(lines[j-16].split(' ')[3])
                 players_pos_sum[j] += pos
                 players_point_sum[j] += point
+                players_pos_award[j] += POS_AWARD[pos-1]
                 if pos < players_best_pos[j]:
                     players_best_pos[j] = pos
                 pos_average = players_pos_sum[j] / (i+1)
@@ -55,7 +58,8 @@ def run(cmd, file_name, times):
                         with open(debuglog+f'/round{i}_Original_command.txt', 'w') as cmd_fout:
                             cmd_fout.writelines(cmd_fin.readlines())
                 output(f'player {j}: round {i}, ranked {pos}, point {point}', record)
-                output(f'\taverage rank {pos_average}, average point {point_average}, best rank {best_pos}',\
+                output(f'\taverage rank {pos_average}, average point {point_average},'\
+                        +f' best rank {best_pos}, rank score accumulated: {players_pos_award[j]}',\
                 record)
     record.close()
 
