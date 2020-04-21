@@ -367,6 +367,7 @@ void player_ai(Info& info)
 			for (int i = 0; i < info.cellInfo.size(); ++i) {
 				auto& cell = info.cellInfo[i];
 				if (cell.ownerid == myID) continue;
+				if (cell.invincibleround) continue;
 				if (cell.r / (curCell.r / (sqrt(2.0))) >= lam) continue;
 				double d = distCell(curCell, cell);
 				if (d < (1.2 + (2.0 / 3)) * curCell.r / sqrt(2.0)) {
@@ -503,6 +504,8 @@ void player_ai(Info& info)
 				auto& k = info.cellInfo[j];
 				if (k.ownerid == myID) continue;
 				if (k.r >= curCell.r * lam) continue;
+				if (k.invincibleround) continue;
+
 				double t = 1 - sqrt(2) / 3;
 				if (min(abs(k.x), abs(N - k.x)) <= curCell.r * t) continue;
 				if (min(abs(k.y), abs(N - k.y)) <= curCell.r * t) continue;
@@ -777,5 +780,5 @@ void player_ai(Info& info)
 
 	double end_time = clock();
 
-	cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
+	//cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
 }

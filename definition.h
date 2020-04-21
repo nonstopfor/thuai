@@ -116,7 +116,7 @@ struct CellInfo {
 	double v;
 	//细胞移动角度
 	int d;
-
+	bool invincibleround;//细胞剩余无敌回合数
 };
 
 //火网信息
