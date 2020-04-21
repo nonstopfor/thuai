@@ -192,7 +192,7 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//�
 }
 
 double INF = 1e10;
-double LOOSEBOUND = 10; //如果距离减10刚好追上，也尝试去追
+double LOOSEBOUND = 0; //depreciated,如果距离减10刚好追上，也尝试去追
 
 double distAndTime(CellInfo me, CellInfo enemy, bool time = false) {
 
