@@ -292,7 +292,12 @@ bool safe_cell(CellInfo me, Info& info) {
 	return true;
 }
 double get_danger_dist(CellInfo me, CellInfo enemy) {
-	return distCell(me, enemy) - 2.5 * 20 / enemy.r - 2 * enemy.r / 3;
+	double moveDist = distCell(me, enemy) - 2.5 * 20 / enemy.r - 2 * enemy.r / 3;
+	const double eatFactor = 0.9;
+	double newEnemyR = enemy.r/sqrt(2);
+	if(newEnemyR*eatFactor < me.r) return moveDist;//不能分裂吃，只能移动吃
+	double divideDist = distCell(me, enemy) - 1.2 * newEnemyR - 2 * newEnemyR / 3;
+	return min(moveDist,divideDist);
 	//return distCell(me, enemy) - 1.5 * min(20 / enemy.r, enemy.v + 10 / enemy.r) - 2 * enemy.r / 3;
 }
 
