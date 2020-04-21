@@ -28,6 +28,8 @@ info.myCommandList.addCommand(spit,aim_cell_id,direction);//吞吐命令，第�
 */
 
 
+double get_danger_dist(CellInfo me, CellInfo enemy);
+
 double maxSpeed(CellInfo& cell) {
 	return 20 / cell.r;
 }
@@ -126,6 +128,8 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 	TPlayerID myID = info.myID;
 	auto p1 = make_pair(x1, y1);
 	auto p2 = make_pair(x2, y2);
+	CellInfo myCell = CellInfo();
+	myCell.x = x1; myCell.y = y1; myCell.r = r;
 
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		auto& cell = info.cellInfo[i];
@@ -134,7 +138,10 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 + min(20 / cell.r, cell.v + 10 / cell.r))) return -2;
+		bool intersect = Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 +
+				min(20 / cell.r, cell.v + 10 / cell.r));	//是否和路线相交
+		bool inDangerDist = !(get_danger_dist(myCell, cell) > 0);
+		if (intersect && inDangerDist) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
@@ -292,7 +299,13 @@ bool safe_cell(CellInfo me, Info& info) {
 	return true;
 }
 double get_danger_dist(CellInfo me, CellInfo enemy) {
-	return distCell(me, enemy) - 2.5 * 20 / enemy.r - 2 * enemy.r / 3;
+	const double eatFactor = 0.9;
+	if(enemy.r*eatFactor < me.r) return 1;//No danger
+	double moveDist = distCell(me, enemy) - 2.5 * 20 / enemy.r - 2 * enemy.r / 3;
+	double newEnemyR = enemy.r/sqrt(2);
+	if(newEnemyR*eatFactor < me.r) return moveDist;//不能分裂吃，只能移动吃
+	double divideDist = distCell(me, enemy) - 1.2 * newEnemyR - 2 * newEnemyR / 3;
+	return min(moveDist,divideDist);
 	//return distCell(me, enemy) - 1.5 * min(20 / enemy.r, enemy.v + 10 / enemy.r) - 2 * enemy.r / 3;
 }
 
@@ -374,10 +387,29 @@ void player_ai(Info& info)
 				auto& cell = info.cellInfo[div_select];
 				double dx = cell.x - curCell.x;
 				double dy = cell.y - curCell.y;
-				direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
-				info.myCommandList.addCommand(Division, curCell.id, direction);
-				cell_num++;
-				continue;
+				//接着判断是否分裂后仍然安全
+				CellInfo stay, rush;	//分裂出的两个细胞
+				stay.x = curCell.x; stay.y = curCell.y; stay.r = curCell.r / sqrt(2);
+				double rushRatio = 1.2 * stay.r / sqrt(dx*dx+dy*dy);//1.2是rush距离比新半径的倍数
+				rush.x = dx*rushRatio + stay.x;
+				rush.y = dy*rushRatio + stay.y;
+				rush.r = stay.r;
+				bool bothAreSafe = true;
+				for (int i = 0; i < info.cellInfo.size(); ++i) {
+					if (info.cellInfo[i].ownerid == myID) continue;
+					auto& enemy = info.cellInfo[i];
+					if (get_danger_dist(stay, enemy) <= 0 || get_danger_dist(stay, enemy) <= 0) {
+						bothAreSafe = false;
+						break;
+					}
+				}
+				if (bothAreSafe) {
+					//两者都安全时可以进行分裂
+					direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
+					info.myCommandList.addCommand(Division, curCell.id, direction);
+					cell_num++;
+					continue;
+				}
 			}
 		}
 
