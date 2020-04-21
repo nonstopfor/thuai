@@ -140,8 +140,8 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		auto p3 = make_pair(x, y);
 		bool intersect = Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 +
 				min(20 / cell.r, cell.v + 10 / cell.r));	//是否和路线相交
-		bool inDangerDist = !(get_danger_dist(myCell, cell) > 0);
-		if (intersect && inDangerDist) return -2;
+		//bool inDangerDist = !(get_danger_dist(myCell, cell) > 0);
+		if (intersect) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
