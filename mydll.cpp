@@ -386,10 +386,29 @@ void player_ai(Info& info)
 				auto& cell = info.cellInfo[div_select];
 				double dx = cell.x - curCell.x;
 				double dy = cell.y - curCell.y;
-				direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
-				info.myCommandList.addCommand(Division, curCell.id, direction);
-				cell_num++;
-				continue;
+				//接着判断是否分裂后仍然安全
+				CellInfo stay, rush;	//分裂出的两个细胞
+				stay.x = curCell.x; stay.y = curCell.y; stay.r = curCell.r / sqrt(2);
+				double rushRatio = 1.2 * stay.r / sqrt(dx*dx+dy*dy);//1.2是rush距离比新半径的倍数
+				rush.x = dx*rushRatio + stay.x;
+				rush.y = dy*rushRatio + stay.y;
+				rush.r = stay.r;
+				bool bothAreSafe = true;
+				for (int i = 0; i < info.cellInfo.size(); ++i) {
+					if (info.cellInfo[i].ownerid == myID) continue;
+					auto& enemy = info.cellInfo[i];
+					if (get_danger_dist(stay, enemy) <= 0 || get_danger_dist(stay, enemy) <= 0) {
+						bothAreSafe = false;
+						break;
+					}
+				}
+				if (bothAreSafe) {
+					//两者都安全时可以进行分裂
+					direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
+					info.myCommandList.addCommand(Division, curCell.id, direction);
+					cell_num++;
+					continue;
+				}
 			}
 		}
 
