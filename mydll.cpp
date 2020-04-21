@@ -28,6 +28,8 @@ info.myCommandList.addCommand(spit,aim_cell_id,direction);//吞吐命令，第�
 */
 
 
+double get_danger_dist(CellInfo me, CellInfo enemy);
+
 double maxSpeed(CellInfo& cell) {
 	return 20 / cell.r;
 }
@@ -126,6 +128,8 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 	TPlayerID myID = info.myID;
 	auto p1 = make_pair(x1, y1);
 	auto p2 = make_pair(x2, y2);
+	CellInfo myCell = CellInfo();
+	myCell.x = x1; myCell.y = y1; myCell.r = r;
 
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		auto& cell = info.cellInfo[i];
@@ -134,7 +138,10 @@ int safe(Info& info, double x1, double y1, double r, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 + min(20 / cell.r, cell.v + 10 / cell.r))) return -2;
+		bool intersect = Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 +
+				min(20 / cell.r, cell.v + 10 / cell.r));	//是否和路线相交
+		bool inDangerDist = !(get_danger_dist(myCell, cell) > 0);
+		if (intersect && inDangerDist) return -2;
 	}
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
