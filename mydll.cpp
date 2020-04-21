@@ -302,7 +302,8 @@ bool safe_cell(CellInfo me, Info& info) {
 	return true;
 }
 double get_danger_dist(CellInfo me, CellInfo enemy) {
-	return distCell(me, enemy) - 1.5 * min(20 / enemy.r, enemy.v + 10 / enemy.r) - 2 * enemy.r / 3;
+	return distCell(me, enemy) - 2.5 * 20 / enemy.r - 2 * enemy.r / 3;
+	//return distCell(me, enemy) - 1.5 * min(20 / enemy.r, enemy.v + 10 / enemy.r) - 2 * enemy.r / 3;
 }
 
 void player_ai(Info& info)
