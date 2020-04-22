@@ -383,11 +383,12 @@ bool division_safe(CellInfo& me, Info& info, double tx, double ty) {
 	return bothAreSafe;
 }
 
-double get_danger_dist(CellInfo& me, CellInfo& enemy) {
+double get_danger_dist(CellInfo& me, CellInfo& enemy, bool final200=false) {
 	const double eatFactor = 0.9;
 	if (enemy.r * eatFactor < me.r) return 1;//No danger
 	//double moveDist = distCell(me, enemy) - 2.5 * 20 / enemy.r - 2 * enemy.r / 3;
-	double moveTime = compute_time(enemy, me.x, me.y, true) - 2.5;//2.5帧内能否到我这里，能就>0
+	double moveTime = compute_time(enemy, me.x, me.y, true) -
+		(final200 ? 1 : 2.5);//2.5帧内能否到我这里，能就>0,最后200回合改成1帧
 	double newEnemyR = enemy.r / sqrt(2);
 	if (newEnemyR * eatFactor < me.r) return moveTime;//不能分裂吃，只能移动吃
 	double divideDist = distCell(me, enemy) - 1.2 * newEnemyR - 2 * newEnemyR / 3;
@@ -726,15 +727,17 @@ void player_ai(Info& info)
 		}
 
 		if (info.round > 800 && cur == maxCell) {
-			int nearest = -1;//最近敌人id
+			int nearest = -1;//最近有威胁敌人id
 			for (int k = 0; k < info.cellInfo.size(); k++) {
 				if (info.cellInfo[k].ownerid == myID) continue;
-				if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
+				//if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
+				if (get_danger_dist(curCell, info.cellInfo[k], true) > 0) continue;
 				if (nearest == -1) nearest = k;
 				else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest]))
 					nearest = k;
 			}
-			if (nearest != -1 && distCell(curCell, info.cellInfo[nearest]) < info.cellInfo[nearest].r) {
+			//if (nearest != -1 && distCell(curCell, info.cellInfo[nearest]) < info.cellInfo[nearest].r) {
+			if (nearest != -1) {
 				direction = compute_dir(curCell.x, curCell.y,
 					info.cellInfo[nearest].x, info.cellInfo[nearest].y);
 				info.myCommandList.addCommand(Move, curCell.id, direction);
