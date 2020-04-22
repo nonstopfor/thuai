@@ -792,12 +792,13 @@ void player_ai(Info& info)
 #ifdef DEBUG
 				debugInfo[cur] << "\ttargetX >= N + 1, nearest = " << nearest << " nearest2 = " << nearest2 << endl;
 #endif
-				if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
+                //if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
+				if (nearest != -1 &&  ) {
 					cout << "round: " << info.round << " cell: " << curCell.id << " x,y,r: " << curCell.x << " " << curCell.y << " " << curCell.r << " run away" << endl;
 
 					direction = compute_dir(curCell.x, curCell.y,
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
-					if (nearest2 != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.3 * curCell.r) {
+					if (nearest2 != -1 && get_danger_dist(curCell, info.cellInfo[nearest2]) <= 0) {
 						int direction2 = compute_dir(curCell.x, curCell.y,
 							info.cellInfo[nearest2].x, info.cellInfo[nearest2].y);
 #ifdef DEBUG
