@@ -124,16 +124,17 @@ bool Judis(PAIR P1, PAIR P2, PAIR yuan, double R) {
 
 double compute_time(CellInfo& cell, double tx, double ty, bool reduce_r = false) {
 	double delta_x = tx - cell.x, delta_y = ty - cell.y;
-	double dist = sqrt(delta_x*delta_x + delta_y*delta_y) -
-		   (reduce_r ? 2.0 / 3 * cell.r : 0);
+	double dist = sqrt(delta_x * delta_x + delta_y * delta_y) -
+		(reduce_r ? 2.0 / 3 * cell.r : 0);
 	double acc = 10 / cell.r, top = 20 / cell.r;//加速度，最大速度
 	double cur_v = cell.v;//当前速度
 	double reach_top_time = (top - cur_v) / acc;//达到最大速度所需时间
-	double reach_top_dist = (top*top - cur_v*cur_v)/2/acc;//2ax = vt^2- v0^2
+	double reach_top_dist = (top * top - cur_v * cur_v) / 2 / acc;//2ax = vt^2- v0^2
 	double t_consume = 0;
 	if (reach_top_dist >= dist) {//加速过程可cover dist
-		t_consume = (-cur_v + sqrt(cur_v*cur_v + 2*acc*dist)) / acc;
-	} else {
+		t_consume = (-cur_v + sqrt(cur_v * cur_v + 2 * acc * dist)) / acc;
+	}
+	else {
 		t_consume += reach_top_time;
 		t_consume += (dist - reach_top_dist) / top;
 	}
@@ -146,7 +147,15 @@ bool judge_projection(PAIR P1, PAIR P2, PAIR P3) {
 	bool f2 = (P3.first - P2.first) * (P1.first - P2.first) + (P3.second - P2.second) * (P1.second - P2.second) < 0;
 	return !f1 && !f2;
 }
-int safe(Info& info, CellInfo& me, double x2, double y2) {
+
+int point_dir(PAIR P1, PAIR P2) {
+	//P1指向P2的向量的方向
+	double dx = P2.first - P1.first;
+	double dy = P2.second - P2.first;
+	int dir = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
+	return dir;
+}
+int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 	//-2表示路径上有其他细胞
 	//-1表示路径安全
 	//0-x 表示路径上有刺球，返回刺球idx
@@ -154,7 +163,6 @@ int safe(Info& info, CellInfo& me, double x2, double y2) {
 	double x1 = me.x, y1 = me.y, r = me.r;
 	auto p1 = make_pair(x1, y1);
 	auto p2 = make_pair(x2, y2);
-
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		auto& cell = info.cellInfo[i];
 		if (cell.ownerid == myID) continue;
@@ -162,25 +170,28 @@ int safe(Info& info, CellInfo& me, double x2, double y2) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
+		if (abs(point_dir(p3, p1) - cell.d) > 30 && abs(point_dir(p3, p2) - cell.d) > 5) continue;
+		//if (abs(point_dir(p3, p2) - cell.d) > 5) continue;
+		double new_ar = sqrt((PI * ar * ar + ds) / PI);
 		if (judge_projection(p1, p2, p3)) {
 			//如果投影在线段内
 			double me_t = compute_time(me, x2, y2, true);
 			double enemy_t = compute_time(cell, x2, y2, true);
-			if (enemy_t < me_t) return -2;
+			if (enemy_t < me_t && r / ar < lam) return -2;
 			//计算投影点的坐标
 			double a = ((y - y1) * (y2 - y1) + (x - x1) * (x2 - x1)) / ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 			double project_x = x1 + a * (x2 - x1);
 			double project_y = y1 + a * (y2 - y1);
 			me_t = compute_time(me, project_x, project_y, false);
 			enemy_t = compute_time(cell, project_x, project_y, true);
-			if (enemy_t < me_t) return -2;
+			if (enemy_t < me_t && r / new_ar < lam) return -2;
 
 		}
 		else {
 			//如果投影在线段外
 			double me_t = compute_time(me, x2, y2, true);
 			double enemy_t = compute_time(cell, x2, y2, true);
-			if (enemy_t < me_t) return -2;
+			if (enemy_t < me_t && r / new_ar < lam) return -2;
 		}
 		/*
 		bool intersect = Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 +
@@ -489,7 +500,7 @@ void player_ai(Info& info)
 		}
 
 		//先检查是否需要逃跑
-
+		/*
 		{
 			int nearest = -1;//最近敌人id
 			for (int k = 0; k < info.cellInfo.size(); k++) {
@@ -567,7 +578,7 @@ void player_ai(Info& info)
 				}
 			}
 
-
+			*/
 
 		int split = splitCheck(myCell, maxCell, dangercell_idx, cur, info.round);
 		//int split = splitCheck(myCell, maxCell, cur, info.round, info.cellInfo[nearestEnemy]);
@@ -589,7 +600,7 @@ void player_ai(Info& info)
 				double t = 1 - sqrt(2) / 3;
 				if (min(abs(k.nux), abs(N - k.nux)) <= curCell.r * t) continue;
 				if (min(abs(k.nuy), abs(N - k.nuy)) <= curCell.r * t) continue;
-				int w = safe(info, curCell, k.nux, k.nuy);
+				int w = safe(info, curCell, k.nux, k.nuy, PI * k.nur * k.nur);
 				if (w != -2) {
 					//如果不是路径上有其他细胞
 					nutrient_idx.push_back(j);
@@ -612,7 +623,7 @@ void player_ai(Info& info)
 				if (min(abs(k.y), abs(N - k.y)) <= curCell.r * t) continue;
 				if (!catchable(curCell, info.cellInfo[j])) continue;
 				//if (distCell(curCell, info.cellInfo[j]) > 1.5 * info.cellInfo[j].r) continue;
-				int w = safe(info, curCell, k.x, k.y);
+				int w = safe(info, curCell, k.x, k.y, PI * k.r * k.r);
 				if (w != -2) {
 					//如果不是路径上有其他细胞
 					cell_idx.push_back(j);
@@ -701,13 +712,13 @@ void player_ai(Info& info)
 					targetX = info.cellInfo[cell_idx[0]].x;
 					targetY = info.cellInfo[cell_idx[0]].y;
 				}
-			}
+				}
 
 #ifdef DEBUG
 			debugInfo[cur] << "\t After nutrient found. targetX = " << targetX << " targetY = " << targetY << endl;
 #endif
 
-		}
+			}
 
 		if (info.round > 800 && cur == maxCell) {
 			int nearest = -1;//最近敌人id
@@ -726,7 +737,7 @@ void player_ai(Info& info)
 			else {
 				direction = compute_dir(150, 150, curCell.x, curCell.y);
 				info.myCommandList.addCommand(Move, curCell.id, direction);
-			}
+		}
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
@@ -739,7 +750,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 				debugInfo[cur] << "\ttargetX < N + 1, direction = " << direction << endl;
 #endif
-			}
+		}
 			else
 			{
 				// check if enemy too near
@@ -776,7 +787,7 @@ void player_ai(Info& info)
 						if (direction2 < direction - 180) direction2 += 360;
 						else if (direction2 > direction + 180) direction2 -= 360;
 						direction = ((direction + direction2) / 2 + 360) % 360;
-					}
+				}
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
 #endif
@@ -813,7 +824,7 @@ void player_ai(Info& info)
 #endif
 
 					info.myCommandList.addCommand(Move, curCell.id, direction);
-					}
+			}
 				else {
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
@@ -836,14 +847,14 @@ void player_ai(Info& info)
 #endif
 
 				}
+						}
 					}
-				}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-			}
+				}
 
 	double end_time = clock();
 
 	//cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
-			}
+	}
