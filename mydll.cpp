@@ -153,7 +153,7 @@ bool judge_projection(PAIR P1, PAIR P2, PAIR P3) {
 int point_dir(PAIR P1, PAIR P2) {
 	//P1指向P2的向量的方向
 	double dx = P2.first - P1.first;
-	double dy = P2.second - P2.first;
+	double dy = P2.second - P1.second;
 	int dir = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
 	return dir;
 }
