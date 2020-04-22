@@ -172,7 +172,7 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
-		if (r / cell.r < lam && distCell(me, cell, true) < 0) return -2;
+		if (r / cell.r < lam && distCell(me, cell, true) < 20 / cell.r) return -2;
 		if (abs(point_dir(p3, p1) - cell.d) > 30 && abs(point_dir(p3, p2) - cell.d) > 5) continue;
 		//if (abs(point_dir(p3, p2) - cell.d) > 5) continue;
 		double new_ar = sqrt((PI * ar * ar + ds) / PI);
@@ -386,11 +386,12 @@ bool division_safe(CellInfo& me, Info& info, double tx, double ty) {
 double get_danger_dist(CellInfo& me, CellInfo& enemy) {
 	const double eatFactor = 0.9;
 	if (enemy.r * eatFactor < me.r) return 1;//No danger
-	double moveDist = distCell(me, enemy) - 2.5 * 20 / enemy.r - 2 * enemy.r / 3;
+	//double moveDist = distCell(me, enemy) - 2.5 * 20 / enemy.r - 2 * enemy.r / 3;
+	double moveTime = compute_time(enemy, me.x, me.y, true) - 2.5;//2.5帧内能否到我这里，能就>0
 	double newEnemyR = enemy.r / sqrt(2);
-	if (newEnemyR * eatFactor < me.r) return moveDist;//不能分裂吃，只能移动吃
+	if (newEnemyR * eatFactor < me.r) return moveTime;//不能分裂吃，只能移动吃
 	double divideDist = distCell(me, enemy) - 1.2 * newEnemyR - 2 * newEnemyR / 3;
-	return min(moveDist, divideDist);
+	return min(moveTime, divideDist);
 	//return distCell(me, enemy) - 1.5 * min(20 / enemy.r, enemy.v + 10 / enemy.r) - 2 * enemy.r / 3;
 }
 
@@ -747,7 +748,17 @@ void player_ai(Info& info)
 #endif
 		}
 		else {
-			if (targetX < N + 1)
+			//危险检查
+			bool danger = false;
+			for (int i = 0; i < info.cellInfo.size(); ++i) {
+				auto& cell = info.cellInfo[i];
+				if (cell.ownerid == myID) continue;
+				if (get_danger_dist(curCell, cell) <= 0) {
+					danger = true;
+					break;
+				}
+			}
+			if (targetX < N + 1 && !danger)
 			{
 				direction = compute_dir(targetX, targetY, curCell.x, curCell.y, curCell.r);
 				info.myCommandList.addCommand(Move, curCell.id, direction);
