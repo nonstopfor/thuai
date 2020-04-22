@@ -208,6 +208,7 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 		if (intersect) return -2;
 		*/
 	}
+	/*
 	for (int i = 0; i < info.spikyballInfo.size(); ++i) {
 		auto& t = info.spikyballInfo[i];
 		double x = t.sx, y = t.sy;
@@ -216,12 +217,16 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 		auto p3 = make_pair(x, y);
 		if (Judis(p1, p2, p3, ar + r * 2 / 3)) return i;
 	}
+	*/
 	return -1;
 }
 int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//算绕路就加r，是自己的半径
 
 	double dx = tx - sx;
 	double dy = ty - sy;
+	int direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
+	return direction;
+
 	int spike = -1;
 	for (int i = 0; i < globalInfo->spikyballInfo.size(); ++i) {
 		if (r < 0) break;
@@ -243,7 +248,6 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//�
 			}
 		}
 	}
-	int direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
 	if (spike != -1) {
 		int direction2 = (int)(atan2(globalInfo->spikyballInfo[spike].sx - sx, globalInfo->spikyballInfo[spike].sy - sy) / PI * 180 + 360) % 360;
 		if (direction2 < direction - 180) direction2 += 360;
@@ -307,7 +311,8 @@ double gain_cell(CellInfo& mycell, CellInfo& enemy, int num) {
 	//double d = dist(mycell.x, mycell.y, enemy.x, enemy.y) - mycell.r * 2 / 3;
 	double t = timeConsume(mycell, enemy);
 	//cout << "timeConsume: " << t << endl;
-	return (PI * enemy.r * enemy.r + 500) / timeConsume(mycell, enemy) + exp(num * num) * gain_increase;
+	double delta = distCell(mycell, enemy, true) < 0 ? 500 : 0;
+	return (PI * enemy.r * enemy.r + 500) / timeConsume(mycell, enemy) + exp(num * num) * gain_increase + delta;
 }
 
 bool catchable(CellInfo& me, CellInfo& enemy) {
@@ -452,6 +457,7 @@ void player_ai(Info& info)
 	for (int cur = 0; cur < myCell.size(); cur++)
 	{
 		CellInfo& curCell = myCell[cur];
+		cout << "round: " << info.round << " mycell: " << curCell.id << " r: " << curCell.r << endl;
 		int direction = 0;
 		//先判断能否分裂直接吃细胞
 		if (cell_num < 6) {
@@ -583,8 +589,8 @@ void player_ai(Info& info)
 
 				info.myCommandList.addCommand(Move, curCell.id, direction);
 				continue;
-			}
-		}
+				}
+				}
 
 
 
@@ -785,7 +791,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-		}
+			}
 		else {
 			if (targetX < N + 1)
 			{
@@ -821,7 +827,7 @@ void player_ai(Info& info)
 				if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
 					direction = compute_dir(curCell.x, curCell.y,
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
-					if (nearest2 != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.3 * curCell.r) {
+					if (nearest2 != -1 && distCell(curCell, info.cellInfo[nearest2], true) < 1.3 * curCell.r) {
 						int direction2 = compute_dir(curCell.x, curCell.y,
 							info.cellInfo[nearest2].x, info.cellInfo[nearest2].y);
 #ifdef DEBUG
@@ -890,15 +896,15 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-				}
+						}
 			}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-	}
+					}
 
 	double end_time = clock();
 
 	//cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
-}
+					}
