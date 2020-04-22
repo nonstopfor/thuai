@@ -123,9 +123,23 @@ bool Judis(PAIR P1, PAIR P2, PAIR yuan, double R) {
 }
 
 double compute_time(CellInfo& cell, double tx, double ty, bool reduce_r = false) {
-
-	return 0;
+	double delta_x = tx - cell.x, delta_y = ty - cell.y;
+	double dist = sqrt(delta_x*delta_x + delta_y*delta_y) -
+		   (reduce_r ? 2.0 / 3 * cell.r : 0);
+	double acc = 10 / cell.r, top = 20 / cell.r;//加速度，最大速度
+	double cur_v = cell.v;//当前速度
+	double reach_top_time = (top - cur_v) / acc;//达到最大速度所需时间
+	double reach_top_dist = (top*top - cur_v*cur_v)/2/acc;//2ax = vt^2- v0^2
+	double t_consume = 0;
+	if (reach_top_dist >= dist) {//加速过程可cover dist
+		t_consume = (-cur_v + sqrt(cur_v*cur_v + 2*acc*dist)) / acc;
+	} else {
+		t_consume += reach_top_time;
+		t_consume += (dist - reach_top_dist) / top;
+	}
+	return t_consume;
 }
+
 bool judge_projection(PAIR P1, PAIR P2, PAIR P3) {
 	//判断P3在直线P1P2上的投影是否在线段P1P2上
 	bool f1 = (P3.first - P1.first) * (P2.first - P1.first) + (P3.second - P1.second) * (P2.second - P1.second) < 0;
