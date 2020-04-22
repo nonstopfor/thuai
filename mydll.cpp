@@ -172,6 +172,7 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 		double x = cell.x, y = cell.y;
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
+		if (r / cell.r < lam && distCell(me, cell, true) < 0) return -2;
 		if (abs(point_dir(p3, p1) - cell.d) > 30 && abs(point_dir(p3, p2) - cell.d) > 5) continue;
 		//if (abs(point_dir(p3, p2) - cell.d) > 5) continue;
 		double new_ar = sqrt((PI * ar * ar + ds) / PI);
@@ -179,21 +180,21 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 			//如果投影在线段内
 			double me_t = compute_time(me, x2, y2, true);
 			double enemy_t = compute_time(cell, x2, y2, true);
-			if (enemy_t < me_t && r / ar < lam) return -2;
+			if (enemy_t < me_t && r / new_ar < lam && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
 			//计算投影点的坐标
 			double a = ((y - y1) * (y2 - y1) + (x - x1) * (x2 - x1)) / ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 			double project_x = x1 + a * (x2 - x1);
 			double project_y = y1 + a * (y2 - y1);
 			me_t = compute_time(me, project_x, project_y, false);
 			enemy_t = compute_time(cell, project_x, project_y, true);
-			if (enemy_t < me_t && r / new_ar < lam) return -2;
+			if (enemy_t < me_t && r / ar < lam && abs(point_dir(p3, p1) - cell.d) < 30) return -2;
 
 		}
 		else {
 			//如果投影在线段外
 			double me_t = compute_time(me, x2, y2, true);
 			double enemy_t = compute_time(cell, x2, y2, true);
-			if (enemy_t < me_t && r / new_ar < lam) return -2;
+			if (enemy_t < me_t && r / new_ar < lam && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
 		}
 		/*
 		bool intersect = Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 +
@@ -714,13 +715,13 @@ void player_ai(Info& info)
 					targetX = info.cellInfo[cell_idx[0]].x;
 					targetY = info.cellInfo[cell_idx[0]].y;
 				}
-				}
+			}
 
 #ifdef DEBUG
 			debugInfo[cur] << "\t After nutrient found. targetX = " << targetX << " targetY = " << targetY << endl;
 #endif
 
-			}
+		}
 
 		if (info.round > 800 && cur == maxCell) {
 			int nearest = -1;//最近敌人id
@@ -739,7 +740,7 @@ void player_ai(Info& info)
 			else {
 				direction = compute_dir(150, 150, curCell.x, curCell.y);
 				info.myCommandList.addCommand(Move, curCell.id, direction);
-		}
+			}
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
@@ -752,7 +753,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 				debugInfo[cur] << "\ttargetX < N + 1, direction = " << direction << endl;
 #endif
-		}
+			}
 			else
 			{
 				// check if enemy too near
@@ -789,7 +790,7 @@ void player_ai(Info& info)
 						if (direction2 < direction - 180) direction2 += 360;
 						else if (direction2 > direction + 180) direction2 -= 360;
 						direction = ((direction + direction2) / 2 + 360) % 360;
-				}
+					}
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
 #endif
@@ -826,7 +827,7 @@ void player_ai(Info& info)
 #endif
 
 					info.myCommandList.addCommand(Move, curCell.id, direction);
-			}
+				}
 				else {
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
@@ -849,14 +850,14 @@ void player_ai(Info& info)
 #endif
 
 				}
-						}
-					}
+			}
+		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-				}
+	}
 
 	double end_time = clock();
 
 	//cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
-	}
+}
