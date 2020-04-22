@@ -180,7 +180,7 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 			//如果投影在线段内
 			double me_t = compute_time(me, x2, y2, true);
 			double enemy_t = compute_time(cell, x2, y2, true);
-			if (enemy_t < me_t && r / new_ar < lam && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
+			if (enemy_t < me_t && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
 			//计算投影点的坐标
 			double a = ((y - y1) * (y2 - y1) + (x - x1) * (x2 - x1)) / ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 			double project_x = x1 + a * (x2 - x1);
@@ -194,7 +194,7 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 			//如果投影在线段外
 			double me_t = compute_time(me, x2, y2, true);
 			double enemy_t = compute_time(cell, x2, y2, true);
-			if (enemy_t < me_t && r / new_ar < lam && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
+			if (enemy_t < me_t && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
 		}
 		/*
 		bool intersect = Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 +
@@ -590,7 +590,7 @@ void player_ai(Info& info)
 		debugInfo[cur] << "\tSplit Check = " << split << endl;
 #endif
 		if (split != -1) {
-			cout << "round: " << info.round << " cell: " << curCell.id << " hebing" << endl;
+			cout << "round: " << info.round << " cell: " << curCell.id << " x,y,r: " << curCell.x << " " << curCell.y << " " << curCell.r << " hebing" << endl;
 			targetX = myCell[split].x;
 			targetY = myCell[split].y;
 		}
@@ -779,7 +779,7 @@ void player_ai(Info& info)
 				debugInfo[cur] << "\ttargetX >= N + 1, nearest = " << nearest << " nearest2 = " << nearest2 << endl;
 #endif
 				if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
-					cout << "round: " << info.round << " cell: " << curCell.id << " run away" << endl;
+					cout << "round: " << info.round << " cell: " << curCell.id << " x,y,r: " << curCell.x << " " << curCell.y << " " << curCell.r << " run away" << endl;
 
 					direction = compute_dir(curCell.x, curCell.y,
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
@@ -837,7 +837,7 @@ void player_ai(Info& info)
 #endif
 
 					cout << "round: " << info.round << " cell: " << curCell.id << " finding safe dir" << endl;
-					
+
 					bool flag = false;
 					for (double angle = 0; angle < 360; angle += 1) {
 						double dx = cos(angle / 360 * 2 * PI) * N;
