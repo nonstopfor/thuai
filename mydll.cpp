@@ -28,7 +28,7 @@ info.myCommandList.addCommand(spit,aim_cell_id,direction);//吞吐命令，第�
 */
 
 
-double get_danger_dist(CellInfo& me, CellInfo& enemy);
+double get_danger_dist(CellInfo& me, CellInfo& enemy, bool final200 = false);
 
 double maxSpeed(CellInfo& cell) {
 	return 20 / cell.r;
@@ -383,7 +383,7 @@ bool division_safe(CellInfo& me, Info& info, double tx, double ty) {
 	return bothAreSafe;
 }
 
-double get_danger_dist(CellInfo& me, CellInfo& enemy, bool final200=false) {
+double get_danger_dist(CellInfo& me, CellInfo& enemy, bool final200) {
 	const double eatFactor = 0.9;
 	if (enemy.r * eatFactor < me.r) return 1;//No danger
 	//double moveDist = distCell(me, enemy) - 2.5 * 20 / enemy.r - 2 * enemy.r / 3;
