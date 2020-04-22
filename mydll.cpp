@@ -590,6 +590,7 @@ void player_ai(Info& info)
 		debugInfo[cur] << "\tSplit Check = " << split << endl;
 #endif
 		if (split != -1) {
+			cout << "round: " << info.round << " cell: " << curCell.id << " hebing" << endl;
 			targetX = myCell[split].x;
 			targetY = myCell[split].y;
 		}
@@ -778,6 +779,8 @@ void player_ai(Info& info)
 				debugInfo[cur] << "\ttargetX >= N + 1, nearest = " << nearest << " nearest2 = " << nearest2 << endl;
 #endif
 				if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
+					cout << "round: " << info.round << " cell: " << curCell.id << " run away" << endl;
+
 					direction = compute_dir(curCell.x, curCell.y,
 						info.cellInfo[nearest].x, info.cellInfo[nearest].y);
 					if (nearest2 != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.3 * curCell.r) {
@@ -832,6 +835,9 @@ void player_ai(Info& info)
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
 #endif
+
+					cout << "round: " << info.round << " cell: " << curCell.id << " finding safe dir" << endl;
+					
 					bool flag = false;
 					for (double angle = 0; angle < 360; angle += 1) {
 						double dx = cos(angle / 360 * 2 * PI) * N;
