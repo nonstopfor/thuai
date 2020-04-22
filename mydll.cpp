@@ -126,6 +126,7 @@ double compute_time(CellInfo& cell, double tx, double ty, bool reduce_r = false)
 	double delta_x = tx - cell.x, delta_y = ty - cell.y;
 	double dist = sqrt(delta_x * delta_x + delta_y * delta_y) -
 		(reduce_r ? 2.0 / 3 * cell.r : 0);
+	if (dist <= 0) return 0;
 	double acc = 10 / cell.r, top = 20 / cell.r;//加速度，最大速度
 	double direction = (int)(atan2(delta_x, delta_y) / PI * 180 + 360) % 360;
 	double cur_v = cell.v * cos((cell.d - direction) / 180.0 * PI);//当前速度
