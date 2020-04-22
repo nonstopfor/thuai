@@ -793,7 +793,7 @@ void player_ai(Info& info)
 				debugInfo[cur] << "\ttargetX >= N + 1, nearest = " << nearest << " nearest2 = " << nearest2 << endl;
 #endif
                 //if (nearest != -1 && distCell(curCell, info.cellInfo[nearest], true) < 1.0 * curCell.r) {
-				if (nearest != -1 &&  ) {
+				if (nearest != -1 && get_danger_dist(curCell, info.cellInfo[nearest]) <= 0) {
 					cout << "round: " << info.round << " cell: " << curCell.id << " x,y,r: " << curCell.x << " " << curCell.y << " " << curCell.r << " run away" << endl;
 
 					direction = compute_dir(curCell.x, curCell.y,
