@@ -911,8 +911,8 @@ void player_ai(Info& info)
 #endif
 					bool flag = false;
 					for (double angle = 0; angle < 360; angle += 1) {
-						double dx = cos(angle / 360 * 2 * PI) * N;
-						double dy = sin(angle / 360 * 2 * PI) * N;
+						double dx = cos(angle / 360 * 2 * PI) * 1.5 * curCell.r;
+						double dy = sin(angle / 360 * 2 * PI) * 1.5 * curCell.r;
 						if (safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) {
 							direction = compute_dir(curCell.x + dx, curCell.y + dy, curCell.x, curCell.y, curCell.r);
 							info.myCommandList.addCommand(Move, curCell.id, direction);
