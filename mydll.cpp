@@ -27,8 +27,10 @@ info.myCommandList.addCommand(Move,aim_cell_id,direction);//移动命令，第�
 info.myCommandList.addCommand(spit,aim_cell_id,direction);//吞吐命令，第二个参数是吞吐方向
 */
 
+double RUN_FACTOR_NORM = 2.5;
+double RUN_FACTOR_DIV_FOR_NUT = 5;
 
-double get_danger_dist(CellInfo& me, CellInfo& enemy);
+double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor=RUN_FACTOR_NORM);
 
 double maxSpeed(CellInfo& cell) {
 	return 20 / cell.r;
@@ -387,7 +389,9 @@ bool safe_cell(CellInfo& me, Info& info) {
 	}
 	return true;
 }
-bool division_safe(CellInfo& me, Info& info, double tx, double ty) {
+bool division_safe(CellInfo& me, Info& info, double tx, double ty,
+		double add_r, double run_factor=RUN_FACTOR_NORM) {
+	//add_r是被吃目标的半径
 	//判断向(tx,ty)位置分裂是否安全
 	double dx = tx - me.x;
 	double dy = ty - me.y;
@@ -399,12 +403,13 @@ bool division_safe(CellInfo& me, Info& info, double tx, double ty) {
 	double rushRatio = 1.2 * stay.r / sqrt(dx * dx + dy * dy);//1.2是rush距离比新半径的倍数
 	rush.x = dx * rushRatio + stay.x;
 	rush.y = dy * rushRatio + stay.y;
-	rush.r = stay.r;
+	rush.r = sqrt(stay.r*stay.r + add_r*add_r);
 	bool bothAreSafe = true;
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		if (info.cellInfo[i].ownerid == myID) continue;
 		auto& enemy = info.cellInfo[i];
-		if (get_danger_dist(stay, enemy) <= 0 || get_danger_dist(rush, enemy) <= 0) {
+		if (get_danger_dist(stay, enemy, run_factor) <= 0 ||
+			get_danger_dist(rush, enemy, run_factor) <= 0) {
 			bothAreSafe = false;
 			break;
 		}
@@ -412,10 +417,10 @@ bool division_safe(CellInfo& me, Info& info, double tx, double ty) {
 	return bothAreSafe;
 }
 
-double get_danger_dist(CellInfo& me, CellInfo& enemy) {
+double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor) {
 	const double eatFactor = 0.9;
 	if (enemy.r * eatFactor < me.r) return 1;//No danger
-	double moveDist = distCell(me, enemy) - 2.5 * 20 / enemy.r - 2 * enemy.r / 3;
+	double moveDist = distCell(me, enemy) - run_factor * 20 / enemy.r - 2 * enemy.r / 3;
 	double newEnemyR = enemy.r / sqrt(2);
 	if (newEnemyR * eatFactor < me.r) return moveDist;//不能分裂吃，只能移动吃
 	double divideDist = distCell(me, enemy) - 1.2 * newEnemyR - 2 * newEnemyR / 3;
@@ -521,7 +526,7 @@ void player_ai(Info& info)
 					}
 				}
 				*/
-				if (division_safe(curCell, info, cell.x, cell.y)) {
+				if (division_safe(curCell, info, cell.x, cell.y, cell.r)) {
 					//两者都安全时可以进行分裂
 					double dx = cell.x - curCell.x;
 					double dy = cell.y - curCell.y;
@@ -714,7 +719,8 @@ void player_ai(Info& info)
 				//cout << info.round << ": " << tmp.size() << endl;
 				if (tmp.size() > 1) {
 					gain_2 = tmp[0].gain + tmp[1].gain;
-					if (gain_2 > gain_1 && division_safe(curCell, info, tmp[0].x, tmp[0].y)) {
+					if (gain_2 > gain_1 && division_safe(curCell, info, tmp[0].x, tmp[0].y,
+								0, RUN_FACTOR_DIV_FOR_NUT)) {
 						int dir1 = compute_dir(tmp[0].x, tmp[0].y, curCell.x, curCell.y);
 						info.myCommandList.addCommand(Division, curCell.id, dir1);
 						cell_num++;
