@@ -28,7 +28,7 @@ info.myCommandList.addCommand(spit,aim_cell_id,direction);//吞吐命令，第�
 */
 
 double RUN_FACTOR_NORM = 2.5;
-double RUN_FACTOR_DIV_FOR_NUT = 5;
+double RUN_FACTOR_DIV_FOR_NUT = 2.5;
 
 double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor=RUN_FACTOR_NORM);
 int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0);
