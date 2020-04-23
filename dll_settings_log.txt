@@ -1,0 +1,39 @@
+4.23
+p0 p10版本调整safe
+p6 初赛版本
+p10 初赛版本加两处分裂安全检查
+p15 p0版本取消绕刺
+
+50轮结果:
+player 0: round 49, ranked 9, point 17500
+	average rank 10.88, average point 16609.0, best rank 5, rank score accumulated: 306
+player 1: round 49, ranked 11, point 14000
+	average rank 10.18, average point 19225.52, best rank 1, rank score accumulated: 345
+player 2: round 49, ranked 3, point 50500
+	average rank 5.82, average point 38271.62, best rank 1, rank score accumulated: 567
+player 3: round 49, ranked 4, point 41948
+	average rank 7.48, average point 28326.94, best rank 1, rank score accumulated: 480
+player 4: round 49, ranked 12, point 11000
+	average rank 6.94, average point 29805.7, best rank 2, rank score accumulated: 503
+player 5: round 49, ranked 6, point 35613
+	average rank 10.24, average point 17666.24, best rank 4, rank score accumulated: 338
+player 6: round 49, ranked 5, point 41113
+	average rank 8.62, average point 23289.06, best rank 3, rank score accumulated: 419
+player 7: round 49, ranked 2, point 57253
+	average rank 2.16, average point 68781.36, best rank 1, rank score accumulated: 826
+player 8: round 49, ranked 1, point 85462
+	average rank 2.58, average point 67611.0, best rank 1, rank score accumulated: 821
+player 9: round 49, ranked 15, point 9000
+	average rank 13.88, average point 8020.0, best rank 5, rank score accumulated: 156
+player 10: round 49, ranked 7, point 24000
+	average rank 8.58, average point 23589.12, best rank 3, rank score accumulated: 421
+player 11: round 49, ranked 13, point 10000
+	average rank 10.32, average point 17207.12, best rank 3, rank score accumulated: 334
+player 12: round 49, ranked 14, point 9500
+	average rank 9.94, average point 19157.3, best rank 2, rank score accumulated: 353
+player 13: round 49, ranked 16, point 8602
+	average rank 10.44, average point 18294.24, best rank 3, rank score accumulated: 328
+player 14: round 49, ranked 8, point 20000
+	average rank 9.68, average point 18836.78, best rank 4, rank score accumulated: 366
+player 15: round 49, ranked 10, point 17000
+	average rank 8.26, average point 23675.9, best rank 3, rank score accumulated: 437
