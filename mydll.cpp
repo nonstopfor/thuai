@@ -31,6 +31,7 @@ double RUN_FACTOR_NORM = 2.5;
 double RUN_FACTOR_DIV_FOR_NUT = 5;
 
 double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor=RUN_FACTOR_NORM);
+int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0);
 
 double maxSpeed(CellInfo& cell) {
 	return 20 / cell.r;
@@ -64,7 +65,7 @@ int get_helper_range(int round) {
 }
 
 int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cellsIndanger, int curCell,
-	int round) {
+	int round, Info& info) {
 
 	double maxR = cells[maxCell].r;
 	bool minboundJudge = cells[curCell].r > MINBOUND * maxR;
@@ -93,7 +94,8 @@ int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cell
 	double minDist = MAXDIST;
 	for (int i = 0; i < cells.size(); ++i) {
 		double distance = distCell(cells[curCell], cells[i], true);
-		if (i != curCell && distance < minDist) {
+		if (i != curCell && distance < minDist &&
+			safe(info, cells[curCell], cells[i].x, cells[i].y) == -1) {
 			target = i;
 			minDist = distance;
 		}
@@ -619,7 +621,7 @@ void player_ai(Info& info)
 
 
 
-		int split = splitCheck(myCell, maxCell, dangercell_idx, cur, info.round);
+		int split = splitCheck(myCell, maxCell, dangercell_idx, cur, info.round, info);
 		//int split = splitCheck(myCell, maxCell, cur, info.round, info.cellInfo[nearestEnemy]);
 		double targetX = 10000, targetY = 10000;
 #ifdef DEBUG
