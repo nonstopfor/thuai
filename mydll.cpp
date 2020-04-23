@@ -273,6 +273,9 @@ double LOOSEBOUND = 0; //depreciated,如果距离减10刚好追上，也尝试�
 
 double distAndTime(CellInfo& me, CellInfo& enemy, bool time = false) {
 
+	//LOOSEBOUND与细胞半径相关
+	LOOSEBOUND = enemy.r;
+
 	double distance = dist(me.x, me.y, enemy.x, enemy.y);
 	distance = distance - 2.0 / 3.0 * me.r;
 	double dist_hat_dir = compute_dir(enemy.x, enemy.y, me.x, me.y);
