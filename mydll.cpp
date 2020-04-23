@@ -193,6 +193,7 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 			//如果投影在线段内
 			double me_t = compute_time(me, x2, y2, true);
 			double enemy_t = compute_time(cell, x2, y2, true);
+
 			if (((enemy_t < me_t + 1 && r / new_ar < lam) || (enemy_t < me_t)) && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
 			//计算投影点的坐标
 			double a = ((y - y1) * (y2 - y1) + (x - x1) * (x2 - x1)) / ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
@@ -602,8 +603,8 @@ void player_ai(Info& info)
 
 				info.myCommandList.addCommand(Move, curCell.id, direction);
 				continue;
-			}
-		}
+				}
+				}
 
 
 
@@ -804,7 +805,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-		}
+			}
 		else {
 			if (targetX < N + 1)
 			{
@@ -909,15 +910,15 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-				}
+						}
 			}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-	}
+					}
 
 	double end_time = clock();
 
 	//cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
-}
+					}
