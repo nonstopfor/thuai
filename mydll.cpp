@@ -171,7 +171,7 @@ int compute_time(CellInfo& cell, double tx, double ty, bool reduce_r = false) {
 	return ceil(t_consume);
 }
 
-int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
+int safe(Info& info, CellInfo& me, double x2, double y2, double ds) {
 	//-2表示路径上有其他细胞
 	//-1表示路径安全
 	//0-x 表示路径上有刺球，返回刺球idx
