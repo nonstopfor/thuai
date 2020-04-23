@@ -191,24 +191,24 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 		double new_ar = sqrt((PI * ar * ar + ds) / PI);
 		if (judge_projection(p1, p2, p3)) {
 			//如果投影在线段内
-			double me_t = compute_time(me, x2, y2, true);
-			double enemy_t = compute_time(cell, x2, y2, true);
+			int me_t = compute_time(me, x2, y2, true);
+			int enemy_t = compute_time(cell, x2, y2, true);
 
-			if (((enemy_t < me_t + 1 && r / new_ar < lam) || (enemy_t < me_t)) && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
+			if (((enemy_t < me_t + 2 && r / new_ar < lam) || (enemy_t < me_t)) && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
 			//计算投影点的坐标
 			double a = ((y - y1) * (y2 - y1) + (x - x1) * (x2 - x1)) / ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 			double project_x = x1 + a * (x2 - x1);
 			double project_y = y1 + a * (y2 - y1);
 			me_t = compute_time(me, project_x, project_y, false);
 			enemy_t = compute_time(cell, project_x, project_y, true);
-			if (enemy_t < me_t && r / ar < lam && abs(point_dir(p3, p1) - cell.d) < 30) return -2;
+			if (enemy_t <= me_t && r / ar < lam && abs(point_dir(p3, p1) - cell.d) < 30) return -2;
 
 		}
 		else {
 			//如果投影在线段外
 			double me_t = compute_time(me, x2, y2, true);
 			double enemy_t = compute_time(cell, x2, y2, true);
-			if (((enemy_t < me_t + 1 && r / new_ar < lam) || (enemy_t < me_t)) && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
+			if (((enemy_t < me_t + 2 && r / new_ar < lam) || (enemy_t < me_t)) && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
 		}
 		/*
 		bool intersect = Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 +
@@ -318,9 +318,15 @@ double gain_nutrient(CellInfo& mycell, NutrientInfo& nut) {
 	return PI * nut.nur * nut.nur / (d / 20 * mycell.r);
 }
 
+bool baowei(CellInfo& me, CellInfo& cell) {
+	//判断me是否包围cell
+	return distCell(me, cell, true) <= me.r + cell.r;
+}
+
 double gain_increase = 20;
 double gain_cell(CellInfo& mycell, CellInfo& enemy, int num) {
 	//double d = dist(mycell.x, mycell.y, enemy.x, enemy.y) - mycell.r * 2 / 3;
+	//if (!baowei(mycell, enemy)) return 0.0;
 	double t = timeConsume(mycell, enemy);
 	//cout << "timeConsume: " << t << endl;
 	double delta = distCell(mycell, enemy, true) < 0 ? 500 : 0;
@@ -464,7 +470,7 @@ void player_ai(Info& info)
 			auto& me = info.cellInfo[j];
 			if (me.ownerid != myID) continue;
 			if (cell.r / me.r >= lam) continue;
-			if (distCell(me, cell, true) <= me.r + cell.r) cell_clamp[i]++;
+			if (baowei(me, cell)) cell_clamp[i]++;
 		}
 	}
 	int cell_num = myCell.size();
@@ -603,8 +609,8 @@ void player_ai(Info& info)
 
 				info.myCommandList.addCommand(Move, curCell.id, direction);
 				continue;
-				}
-				}
+			}
+		}
 
 
 
@@ -737,6 +743,8 @@ void player_ai(Info& info)
 					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
 				}
 				else {
+					//实际选择了，额外加上包围者
+					//cell_clamp[cell_idx[0]]++;
 					targetX = info.cellInfo[cell_idx[0]].x;
 					targetY = info.cellInfo[cell_idx[0]].y;
 				}
@@ -805,7 +813,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-			}
+		}
 		else {
 			if (targetX < N + 1)
 			{
@@ -910,15 +918,15 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-						}
+				}
 			}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-					}
+	}
 
 	double end_time = clock();
 
 	//cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
-					}
+}
