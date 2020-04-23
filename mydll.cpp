@@ -27,10 +27,8 @@ info.myCommandList.addCommand(Move,aim_cell_id,direction);//移动命令，第�
 info.myCommandList.addCommand(spit,aim_cell_id,direction);//吞吐命令，第二个参数是吞吐方向
 */
 
-const double RUN_FRAME_NORM = 2.5;
-const double RUN_FRAME_SPLIT_FOR_NUT = 5;
-const double RUN_FRAME_FINAL200 = 1;
-double get_danger_dist(CellInfo& me, CellInfo& enemy, const double& run_frame);
+
+double get_danger_dist(CellInfo& me, CellInfo& enemy);
 
 double maxSpeed(CellInfo& cell) {
 	return 20 / cell.r;
@@ -55,6 +53,14 @@ double DISTFACTOR = 1.1;
 int DISASTERROUND = 700;
 int HELP_RANGE = 50;
 int MAX_CELL_NUM = 20;
+
+int get_helper_range(int round) {
+	if (round < 200) return 10;
+	if (round < 400) return 20;
+	if (round < 600) return 50;
+	return 60;
+}
+
 int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cellsIndanger, int curCell,
 	int round) {
 
@@ -71,7 +77,7 @@ int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cell
 			}
 			CellInfo& tarCell = cells[cellsIndanger[i]];
 			double circleDist = distCell(cells[curCell], tarCell);
-			if (circleDist > HELP_RANGE)
+			if (circleDist > get_helper_range(round))
 				continue;
 			else {
 				//found target which needed help
@@ -187,7 +193,7 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 			//如果投影在线段内
 			double me_t = compute_time(me, x2, y2, true);
 			double enemy_t = compute_time(cell, x2, y2, true);
-			if (enemy_t < me_t && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
+			if (((enemy_t < me_t + 1 && r / new_ar < lam) || (enemy_t < me_t)) && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
 			//计算投影点的坐标
 			double a = ((y - y1) * (y2 - y1) + (x - x1) * (x2 - x1)) / ((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 			double project_x = x1 + a * (x2 - x1);
@@ -201,7 +207,7 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds = 0) {
 			//如果投影在线段外
 			double me_t = compute_time(me, x2, y2, true);
 			double enemy_t = compute_time(cell, x2, y2, true);
-			if (enemy_t < me_t && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
+			if (((enemy_t < me_t + 1 && r / new_ar < lam) || (enemy_t < me_t)) && abs(point_dir(p3, p2) - cell.d) < 5) return -2;
 		}
 		/*
 		bool intersect = Judis(p1, p2, p3, r + 20 / r + 2 * ar / 3 +
@@ -308,13 +314,14 @@ double gain_nutrient(CellInfo& mycell, NutrientInfo& nut) {
 	return PI * nut.nur * nut.nur / (d / 20 * mycell.r);
 }
 
-double gain_increase = 10;
+double gain_increase = 20;
 double gain_cell(CellInfo& mycell, CellInfo& enemy, int num) {
 	//double d = dist(mycell.x, mycell.y, enemy.x, enemy.y) - mycell.r * 2 / 3;
 	double t = timeConsume(mycell, enemy);
 	//cout << "timeConsume: " << t << endl;
 	double delta = distCell(mycell, enemy, true) < 0 ? 500 : 0;
-	return (PI * enemy.r * enemy.r + 500) / timeConsume(mycell, enemy) + exp(num * num) * gain_increase + delta;
+	double new_num = num == 1 ? 0 : num;
+	return (PI * enemy.r * enemy.r + 500) / timeConsume(mycell, enemy) + exp(new_num * new_num) * gain_increase + delta;
 }
 
 bool catchable(CellInfo& me, CellInfo& enemy) {
@@ -370,7 +377,7 @@ bool safe_cell(CellInfo& me, Info& info) {
 	}
 	return true;
 }
-bool division_safe(CellInfo& me, Info& info, double tx, double ty, const double& run_frame) {
+bool division_safe(CellInfo& me, Info& info, double tx, double ty) {
 	//判断向(tx,ty)位置分裂是否安全
 	double dx = tx - me.x;
 	double dy = ty - me.y;
@@ -387,7 +394,7 @@ bool division_safe(CellInfo& me, Info& info, double tx, double ty, const double&
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		if (info.cellInfo[i].ownerid == myID) continue;
 		auto& enemy = info.cellInfo[i];
-		if (get_danger_dist(stay, enemy, run_frame) <= 0 || get_danger_dist(rush, enemy, run_frame) <= 0) {
+		if (get_danger_dist(stay, enemy) <= 0 || get_danger_dist(rush, enemy) <= 0) {
 			bothAreSafe = false;
 			break;
 		}
@@ -395,10 +402,10 @@ bool division_safe(CellInfo& me, Info& info, double tx, double ty, const double&
 	return bothAreSafe;
 }
 
-double get_danger_dist(CellInfo& me, CellInfo& enemy, const double& run_frame) {
+double get_danger_dist(CellInfo& me, CellInfo& enemy) {
 	const double eatFactor = 0.9;
 	if (enemy.r * eatFactor < me.r) return 1;//No danger
-	double moveDist = distCell(me, enemy) - run_frame * 20 / enemy.r - 2 * enemy.r / 3;
+	double moveDist = distCell(me, enemy) - 2.5 * 20 / enemy.r - 2 * enemy.r / 3;
 	double newEnemyR = enemy.r / sqrt(2);
 	if (newEnemyR * eatFactor < me.r) return moveDist;//不能分裂吃，只能移动吃
 	double divideDist = distCell(me, enemy) - 1.2 * newEnemyR - 2 * newEnemyR / 3;
@@ -409,6 +416,7 @@ double get_danger_dist(CellInfo& me, CellInfo& enemy, const double& run_frame) {
 void player_ai(Info& info)
 {
 	double start_time = clock();
+	cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
 	//cout << "start!" << endl;
 	globalInfo = &info;
 
@@ -452,7 +460,7 @@ void player_ai(Info& info)
 			auto& me = info.cellInfo[j];
 			if (me.ownerid != myID) continue;
 			if (cell.r / me.r >= lam) continue;
-			if (distCell(me, cell) <= cell.r) cell_clamp[i]++;
+			if (distCell(me, cell, true) <= me.r + cell.r) cell_clamp[i]++;
 		}
 	}
 	int cell_num = myCell.size();
@@ -503,7 +511,7 @@ void player_ai(Info& info)
 					}
 				}
 				*/
-				if (division_safe(curCell, info, cell.x, cell.y, RUN_FRAME_NORM)) {
+				if (division_safe(curCell, info, cell.x, cell.y)) {
 					//两者都安全时可以进行分裂
 					double dx = cell.x - curCell.x;
 					double dy = cell.y - curCell.y;
@@ -522,7 +530,7 @@ void player_ai(Info& info)
 			for (int k = 0; k < info.cellInfo.size(); k++) {
 				if (info.cellInfo[k].ownerid == myID) continue;
 				if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
-				if (get_danger_dist(curCell, info.cellInfo[k], RUN_FRAME_NORM) > 0) continue;
+				if (get_danger_dist(curCell, info.cellInfo[k]) > 0) continue;
 				if (nearest == -1) nearest = k;
 				else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest]))
 					nearest = k;
@@ -532,7 +540,7 @@ void player_ai(Info& info)
 				if (k == nearest) continue;
 				if (info.cellInfo[k].ownerid == myID) continue;
 				if (info.cellInfo[k].r * 0.9 <= curCell.r) continue;
-				if (get_danger_dist(curCell, info.cellInfo[k], RUN_FRAME_NORM) > 0) continue;
+				if (get_danger_dist(curCell, info.cellInfo[k]) > 0) continue;
 				if (nearest2 == -1) nearest2 = k;
 				else if (distCell(curCell, info.cellInfo[k]) < distCell(curCell, info.cellInfo[nearest2]))
 					nearest2 = k;
@@ -553,7 +561,7 @@ void player_ai(Info& info)
 					if (direction2 < direction - 180) direction2 += 360;
 					else if (direction2 > direction + 180) direction2 -= 360;
 					direction = ((direction + direction2) / 2 + 360) % 360;
-				}
+			}
 #ifdef DEBUG
 				debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
 #endif
@@ -591,8 +599,8 @@ void player_ai(Info& info)
 
 				info.myCommandList.addCommand(Move, curCell.id, direction);
 				continue;
-				}
-				}
+		}
+	}
 
 
 
@@ -652,7 +660,7 @@ void player_ai(Info& info)
 				});
 
 
-			if (cell_num < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell, info) && cell_idx.size() + nutrient_idx.size() > 1) {
+			if (info.round < 200 && cell_num < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell, info) && cell_idx.size() + nutrient_idx.size() > 1) {
 				double gain_1 = 0;//不分裂的最大收益
 				double gain_2 = 0;//分裂的最大收益
 				double tx1 = 0, ty1 = 0;//不分裂时目标位置
@@ -696,8 +704,7 @@ void player_ai(Info& info)
 				//cout << info.round << ": " << tmp.size() << endl;
 				if (tmp.size() > 1) {
 					gain_2 = tmp[0].gain + tmp[1].gain;
-					if (gain_2 > gain_1 && division_safe(curCell, info, tmp[0].x, tmp[0].y, 
-						RUN_FRAME_SPLIT_FOR_NUT)) {
+					if (gain_2 > gain_1 && division_safe(curCell, info, tmp[0].x, tmp[0].y)) {
 						int dir1 = compute_dir(tmp[0].x, tmp[0].y, curCell.x, curCell.y);
 						info.myCommandList.addCommand(Division, curCell.id, dir1);
 						cell_num++;
@@ -794,7 +801,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-			}
+		}
 		else {
 			if (targetX < N + 1)
 			{
@@ -803,7 +810,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 				debugInfo[cur] << "\ttargetX < N + 1, direction = " << direction << endl;
 #endif
-			}
+		}
 			else
 			{
 				// check if enemy too near
@@ -840,7 +847,7 @@ void player_ai(Info& info)
 						if (direction2 < direction - 180) direction2 += 360;
 						else if (direction2 > direction + 180) direction2 -= 360;
 						direction = ((direction + direction2) / 2 + 360) % 360;
-					}
+				}
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
 #endif
@@ -899,9 +906,9 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-						}
+				}
 			}
-		}
+						}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
@@ -910,4 +917,4 @@ void player_ai(Info& info)
 	double end_time = clock();
 
 	//cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
-					}
+				}
