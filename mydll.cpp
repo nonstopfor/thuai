@@ -53,7 +53,7 @@ double MAXDIST = 425;
 double UNIONDIST = 60; // if too far away from ally big cells, don't union
 double DISTFACTOR = 1.1;
 int DISASTERROUND = 700;
-int HELP_RANGE = 100;
+int HELP_RANGE = 50;
 int MAX_CELL_NUM = 20;
 int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cellsIndanger, int curCell,
 	int round) {
