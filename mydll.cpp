@@ -319,7 +319,7 @@ double gain_cell(CellInfo& mycell, CellInfo& enemy, int num) {
 	//double d = dist(mycell.x, mycell.y, enemy.x, enemy.y) - mycell.r * 2 / 3;
 	double t = timeConsume(mycell, enemy);
 	//cout << "timeConsume: " << t << endl;
-	double delta = distCell(mycell, enemy, true) < 0 ? 500 : 0;
+	double delta = distCell(mycell, enemy, true) < 0 ? 1500 : 0;
 	double new_num = num == 1 ? 0 : num;
 	return (PI * enemy.r * enemy.r + 500) / timeConsume(mycell, enemy) + exp(new_num * new_num) * gain_increase + delta;
 }
@@ -611,6 +611,7 @@ void player_ai(Info& info)
 		debugInfo[cur] << "\tSplit Check = " << split << endl;
 #endif
 		if (split != -1) {
+			
 			targetX = myCell[split].x;
 			targetY = myCell[split].y;
 		}
@@ -660,7 +661,7 @@ void player_ai(Info& info)
 				});
 
 
-			if (info.round < 200 && cell_num < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell, info) && cell_idx.size() + nutrient_idx.size() > 1) {
+			if (info.round < 100 && cell_num < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell, info) && cell_idx.size() + nutrient_idx.size() > 1) {
 				double gain_1 = 0;//不分裂的最大收益
 				double gain_2 = 0;//分裂的最大收益
 				double tx1 = 0, ty1 = 0;//不分裂时目标位置
@@ -733,6 +734,8 @@ void player_ai(Info& info)
 					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
 				}
 				else {
+					//如果已选为实际目标，再加cell_clamp
+					cell_clamp[cell_idx[0]]++;
 					targetX = info.cellInfo[cell_idx[0]].x;
 					targetY = info.cellInfo[cell_idx[0]].y;
 				}
