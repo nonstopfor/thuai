@@ -94,8 +94,7 @@ int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cell
 	double minDist = MAXDIST;
 	for (int i = 0; i < cells.size(); ++i) {
 		double distance = distCell(cells[curCell], cells[i], true);
-		if (i != curCell && distance < minDist &&
-			safe(info, cells[curCell], cells[i].x, cells[i].y) == -1) {
+		if (i != curCell && distance < minDist) {
 			target = i;
 			minDist = distance;
 		}
