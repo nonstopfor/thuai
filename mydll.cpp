@@ -68,7 +68,7 @@ int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cell
 	int round, Info& info) {
 
 	if (round < 800) return -1;
-	else return maxCell;
+	//else return maxCell;
 	double maxR = cells[maxCell].r;
 	bool minboundJudge = cells[curCell].r > MINBOUND * maxR;
 	bool roundJudge = round < DISASTERROUND || curCell == maxCell;
