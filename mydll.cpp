@@ -909,16 +909,55 @@ void player_ai(Info& info)
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
 #endif
 					bool flag = false;
+                    int l=0,r=0;
+                    int firstUnsafe = 0;
+                    int maxl=-1,maxr=-1;
+                    while(1){
+                        double dx = cos(firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
+                        double dy = sin(firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
+                        if(firstUnsafe>360) break;
+                        if(safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) firstUnsafe++;
+                        else break;
+                    }
+                    l=r=firstUnsafe;
+                    while(firstUnsafe<=360){
+                        while(l<firstUnsafe+360){//扇形左边界
+                            double dx = cos(l / 360 * 2 * PI) * 1.5 * curCell.r;
+                            double dy = sin(l / 360 * 2 * PI) * 1.5 * curCell.r;
+                            if(l>=firstUnsafe+360) break;
+                            if(safe(info, curCell, curCell.x + dx, curCell.y + dy) != -1) l++;
+                            else break;
+                        }
+                        if(l>=firstUnsafe+360) break;//no safe
+                        r=l;
+                        while(r<firstUnsafe+360){//扇形右边界
+                            double dx = cos(r / 360 * 2 * PI) * 1.5 * curCell.r;
+                            double dy = sin(r / 360 * 2 * PI) * 1.5 * curCell.r;
+                            if(r>=firstUnsafe+360) break;
+                            if(safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) r++;
+                            else break;
+                        }
+                        if(maxl==-1 || maxr-maxl<r-l){//更大或第一次
+                            maxl=l;
+                            maxr=r;
+                            flag=true;
+                        }
+                        l=r;//找下个左边界
+                    }
+                    if(flag){
+                        direction = (maxl+maxr)/2;
+                        direction %= 360;
+                        info.myCommandList.addCommand(Move, curCell.id, direction);
+                    }
+                    /*
 					for (double angle = 0; angle < 360; angle += 1) {
-						double dx = cos(angle / 360 * 2 * PI) * 1.5 * curCell.r;
-						double dy = sin(angle / 360 * 2 * PI) * 1.5 * curCell.r;
 						if (safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) {
 							direction = compute_dir(curCell.x + dx, curCell.y + dy, curCell.x, curCell.y, curCell.r);
 							info.myCommandList.addCommand(Move, curCell.id, direction);
 							flag = true;
 							break;
 						}
-					}
+					}*/
 #ifdef DEBUG
 					debugInfo[cur] << " After: direction = " << direction;
 					if (!flag) debugInfo[cur] << "    not move" << endl;
