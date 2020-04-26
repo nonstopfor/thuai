@@ -27,7 +27,7 @@ info.myCommandList.addCommand(Move,aim_cell_id,direction);//移动命令，第�
 info.myCommandList.addCommand(spit,aim_cell_id,direction);//吞吐命令，第二个参数是吞吐方向
 */
 
-double RUN_FACTOR_NORM = 2.5;
+double RUN_FACTOR_NORM = 1.2;
 double RUN_FACTOR_DIV_FOR_NUT = 2.5;
 
 double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor = RUN_FACTOR_NORM);
@@ -182,7 +182,7 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds) {
 	auto p2 = make_pair(x2, y2);
 	CellInfo myCell = CellInfo();
 	myCell.x = x1; myCell.y = y1; myCell.r = r;
-	double angle = 10;
+	double angle = 3;
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		auto& cell = info.cellInfo[i];
 		if (cell.ownerid == myID) continue;
@@ -617,8 +617,8 @@ void player_ai(Info& info)
 
 				info.myCommandList.addCommand(Move, curCell.id, direction);
 				continue;
-				}
-				}
+			}
+		}
 
 
 
@@ -822,7 +822,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-			}
+		}
 		else {
 			if (targetX < N + 1)
 			{
@@ -911,47 +911,47 @@ void player_ai(Info& info)
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
 #endif
 					bool flag = false;
-                    int l=0,r=0;
-                    int firstUnsafe = 0;
-                    int maxl=-1,maxr=-1;
-                    while(1){
-                        double dx = cos(firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
-                        double dy = sin(firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
-                        if(firstUnsafe>360) break;
-                        if(safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) firstUnsafe++;
-                        else break;
-                    }
-                    l=r=firstUnsafe;
-                    while(firstUnsafe<=360){
-                        while(l<firstUnsafe+360){//扇形左边界
-                            double dx = cos(l / 360 * 2 * PI) * 1.5 * curCell.r;
-                            double dy = sin(l / 360 * 2 * PI) * 1.5 * curCell.r;
-                            if(l>=firstUnsafe+360) break;
-                            if(safe(info, curCell, curCell.x + dx, curCell.y + dy) != -1) l++;
-                            else break;
-                        }
-                        if(l>=firstUnsafe+360) break;//no safe
-                        r=l;
-                        while(r<firstUnsafe+360){//扇形右边界
-                            double dx = cos(r / 360 * 2 * PI) * 1.5 * curCell.r;
-                            double dy = sin(r / 360 * 2 * PI) * 1.5 * curCell.r;
-                            if(r>=firstUnsafe+360) break;
-                            if(safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) r++;
-                            else break;
-                        }
-                        if(maxl==-1 || maxr-maxl<r-l){//更大或第一次
-                            maxl=l;
-                            maxr=r;
-                            flag=true;
-                        }
-                        l=r;//找下个左边界
-                    }
-                    if(flag){
-                        direction = (maxl+maxr)/2;
-                        direction %= 360;
-                        info.myCommandList.addCommand(Move, curCell.id, direction);
-                    }
-                    /*
+					int l = 0, r = 0;
+					int firstUnsafe = 0;
+					int maxl = -1, maxr = -1;
+					while (1) {
+						double dx = cos(firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
+						double dy = sin(firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
+						if (firstUnsafe > 360) break;
+						if (safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) firstUnsafe++;
+						else break;
+					}
+					l = r = firstUnsafe;
+					while (firstUnsafe <= 360) {
+						while (l < firstUnsafe + 360) {//扇形左边界
+							double dx = cos(l / 360 * 2 * PI) * 1.5 * curCell.r;
+							double dy = sin(l / 360 * 2 * PI) * 1.5 * curCell.r;
+							if (l >= firstUnsafe + 360) break;
+							if (safe(info, curCell, curCell.x + dx, curCell.y + dy) != -1) l++;
+							else break;
+						}
+						if (l >= firstUnsafe + 360) break;//no safe
+						r = l;
+						while (r < firstUnsafe + 360) {//扇形右边界
+							double dx = cos(r / 360 * 2 * PI) * 1.5 * curCell.r;
+							double dy = sin(r / 360 * 2 * PI) * 1.5 * curCell.r;
+							if (r >= firstUnsafe + 360) break;
+							if (safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) r++;
+							else break;
+						}
+						if (maxl == -1 || maxr - maxl < r - l) {//更大或第一次
+							maxl = l;
+							maxr = r;
+							flag = true;
+						}
+						l = r;//找下个左边界
+					}
+					if (flag) {
+						direction = (maxl + maxr) / 2;
+						direction %= 360;
+						info.myCommandList.addCommand(Move, curCell.id, direction);
+					}
+					/*
 					for (double angle = 0; angle < 360; angle += 1) {
 						if (safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) {
 							direction = compute_dir(curCell.x + dx, curCell.y + dy, curCell.x, curCell.y, curCell.r);
@@ -966,15 +966,15 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-						}
+				}
 			}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-					}
+	}
 
 	double end_time = clock();
 
 	//cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
-					}
+}
