@@ -915,8 +915,8 @@ void player_ai(Info& info)
                     int firstUnsafe = 0;
                     int maxl=-1,maxr=-1;
                     while(1){
-                        double dx = cos(firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
-                        double dy = sin(firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
+                        double dx = cos((double)firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
+                        double dy = sin((double)firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
                         if(firstUnsafe>360) break;
                         if(safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) firstUnsafe++;
                         else break;
@@ -924,8 +924,8 @@ void player_ai(Info& info)
                     l=r=firstUnsafe;
                     while(firstUnsafe<=360){
                         while(l<firstUnsafe+360){//扇形左边界
-                            double dx = cos(l / 360 * 2 * PI) * 1.5 * curCell.r;
-                            double dy = sin(l / 360 * 2 * PI) * 1.5 * curCell.r;
+                            double dx = cos((double)l / 360 * 2 * PI) * 1.5 * curCell.r;
+                            double dy = sin((double)l / 360 * 2 * PI) * 1.5 * curCell.r;
                             if(l>=firstUnsafe+360) break;
                             if(safe(info, curCell, curCell.x + dx, curCell.y + dy) != -1) l++;
                             else break;
@@ -933,8 +933,8 @@ void player_ai(Info& info)
                         if(l>=firstUnsafe+360) break;//no safe
                         r=l;
                         while(r<firstUnsafe+360){//扇形右边界
-                            double dx = cos(r / 360 * 2 * PI) * 1.5 * curCell.r;
-                            double dy = sin(r / 360 * 2 * PI) * 1.5 * curCell.r;
+                            double dx = cos((double)r / 360 * 2 * PI) * 1.5 * curCell.r;
+                            double dy = sin((double)r / 360 * 2 * PI) * 1.5 * curCell.r;
                             if(r>=firstUnsafe+360) break;
                             if(safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) r++;
                             else break;
