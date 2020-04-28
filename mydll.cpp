@@ -17,6 +17,7 @@ using namespace std;
 const double N = 300;
 const double MINR = 6;
 const double lam = 0.9;//小细胞与大细胞半径比值小于这个时被吞噬
+double INF = 1e10;
 double PI = 3.14159265;
 Info* globalInfo;
 typedef pair<double, double> PAIR;
@@ -27,7 +28,7 @@ info.myCommandList.addCommand(Move,aim_cell_id,direction);//移动命令，第�
 info.myCommandList.addCommand(spit,aim_cell_id,direction);//吞吐命令，第二个参数是吞吐方向
 */
 
-double RUN_FACTOR_NORM = 1.2;
+double RUN_FACTOR_NORM = 2.5;
 double RUN_FACTOR_DIV_FOR_NUT = 2.5;
 
 double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor = RUN_FACTOR_NORM);
@@ -274,7 +275,6 @@ int compute_dir(double tx, double ty, double sx, double sy, double r = -1) {//�
 	return direction;
 }
 
-double INF = 1e10;
 double LOOSEBOUND = 0; //depreciated,如果距离减10刚好追上，也尝试去追
 
 double distAndTime(CellInfo& me, CellInfo& enemy, bool time = false) {
@@ -431,10 +431,60 @@ double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor) {
 	//return distCell(me, enemy) - 1.5 * min(20 / enemy.r, enemy.v + 10 / enemy.r) - 2 * enemy.r / 3;
 }
 
+struct block {
+	double score = -INF;
+	static double M;//一个块的边长
+	static int NUM;//一维上块的总数
+	int i;
+	int j;
+	double leftx;//左下角的x
+	double lefty;//左下角的y
+	double rightx;//右上角的x
+	double righty;//右上角的y
+	void compute_pos(int _i, int _j) {
+		//i,j分别表示第一维和第二维的坐标
+		//初始化时调用
+		i = _i;
+		j = _j;
+		leftx = i * M;
+		lefty = j * M;
+		rightx = (i + 1) * M;
+		righty = (j + 1) * M;
+	}
+	static pair<int, int>get_idx(double x, double y) {
+		//根据圆心坐标计算所属的块
+		int bx = x / M;
+		int by = y / M;
+		return make_pair(bx, by);
+	}
+	void compute_score(CellInfo& me, Info& info) {
+		TPlayerID myID = info.myID;
+		double tscore = 0;
+		for (int i = 0; i < info.nutrientInfo.size(); ++i) {
+			auto& nut = info.nutrientInfo[i];
+			if (nut.nur >= me.r) continue;
+			auto p = block::get_idx(nut.nux, nut.nuy);
+			if (p.first != i || p.second != j) continue;
+			tscore += PI * nut.nur * nut.nur;
+		}
+		for (int i = 0; i < info.cellInfo.size(); ++i) {
+			auto& cell = info.cellInfo[i];
+			if (cell.id == myID) continue;
+			auto p = block::get_idx(cell.x, cell.y);
+			if (p.first != i || p.second != j) continue;
+			if (cell.r / me.r < lam) tscore += PI * cell.r * cell.r + 500;
+			if (me.r / cell.r < lam) tscore -= PI * cell.r * cell.r;
+		}
+		score = tscore;
+	}
+};
+double block::M = 50;
+int block::NUM = 6;
+
 void player_ai(Info& info)
 {
 	double start_time = clock();
-	cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
+	//cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
 	//cout << "start!" << endl;
 	globalInfo = &info;
 
@@ -485,7 +535,7 @@ void player_ai(Info& info)
 	for (int cur = 0; cur < myCell.size(); cur++)
 	{
 		CellInfo& curCell = myCell[cur];
-		cout << "round: " << info.round << " mycell: " << curCell.id << " r: " << curCell.r << endl;
+		//cout << "round: " << info.round << " mycell: " << curCell.id << " r: " << curCell.r << endl;
 		int direction = 0;
 		//先判断能否分裂直接吃细胞
 		if (cell_num < 6) {
@@ -633,6 +683,29 @@ void player_ai(Info& info)
 			targetY = myCell[split].y;
 		}
 		else {
+			vector<vector<block>>blocks(block::NUM, vector<block>(block::NUM));
+			int selectx = -1;
+			int selecty = -1;
+			double max_block_score = -INF;
+			if (info.round < 300) {
+				for (int i = 0; i < block::NUM; ++i) {
+					auto p = block::get_idx(curCell.x, curCell.y);
+					int myx = p.first;
+					int myy = p.second;
+					if (abs(i - myx) > 1) continue;
+					for (int j = 0; j < block::NUM; ++j) {
+						if (abs(j - myy) > 1) continue;
+						blocks[i][j].compute_pos(i, j);
+						blocks[i][j].compute_score(curCell, info);
+						if (blocks[i][j].score > max_block_score) {
+							max_block_score = blocks[i][j].score;
+							selectx = i;
+							selecty = j;
+						}
+					}
+				}
+			}
+
 			vector<int>nutrient_idx;//将营养物质按平均收益大小排序
 
 			for (int j = 0; j < info.nutrientInfo.size(); ++j) {
@@ -642,6 +715,10 @@ void player_ai(Info& info)
 				double t = 1 - sqrt(2) / 3;
 				if (min(abs(k.nux), abs(N - k.nux)) <= curCell.r * t) continue;
 				if (min(abs(k.nuy), abs(N - k.nuy)) <= curCell.r * t) continue;
+				if (selectx != -1) {
+					auto p = block::get_idx(k.nux, k.nuy);
+					if (p.first != selectx || p.second != selecty) continue;
+				}
 				int w = safe(info, curCell, k.nux, k.nuy, PI * k.nur * k.nur);
 				if (w != -2) {
 					//如果不是路径上有其他细胞
@@ -665,6 +742,10 @@ void player_ai(Info& info)
 				if (min(abs(k.y), abs(N - k.y)) <= curCell.r * t) continue;
 				if (!catchable(curCell, info.cellInfo[j])) continue;
 				//if (distCell(curCell, info.cellInfo[j]) > 1.5 * info.cellInfo[j].r) continue;
+				if (selectx != -1) {
+					auto p = block::get_idx(k.x, k.y);
+					if (p.first != selectx || p.second != selecty) continue;
+				}
 				int w = safe(info, curCell, k.x, k.y, PI * k.r * k.r);
 				if (w != -2) {
 					//如果不是路径上有其他细胞
@@ -831,7 +912,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 				debugInfo[cur] << "\ttargetX < N + 1, direction = " << direction << endl;
 #endif
-			}
+		}
 			else
 			{
 				// check if enemy too near
@@ -868,7 +949,7 @@ void player_ai(Info& info)
 						if (direction2 < direction - 180) direction2 += 360;
 						else if (direction2 > direction + 180) direction2 -= 360;
 						direction = ((direction + direction2) / 2 + 360) % 360;
-					}
+				}
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
 #endif
@@ -911,12 +992,13 @@ void player_ai(Info& info)
 					debugInfo[cur] << "\t\tFind Safe, direction = " << direction;
 #endif
 					bool flag = false;
+
 					int l = 0, r = 0;
 					int firstUnsafe = 0;
 					int maxl = -1, maxr = -1;
 					while (1) {
-						double dx = cos(firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
-						double dy = sin(firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
+						double dx = cos((double)firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
+						double dy = sin((double)firstUnsafe / 360 * 2 * PI) * 1.5 * curCell.r;
 						if (firstUnsafe > 360) break;
 						if (safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) firstUnsafe++;
 						else break;
@@ -924,8 +1006,8 @@ void player_ai(Info& info)
 					l = r = firstUnsafe;
 					while (firstUnsafe <= 360) {
 						while (l < firstUnsafe + 360) {//扇形左边界
-							double dx = cos(l / 360 * 2 * PI) * 1.5 * curCell.r;
-							double dy = sin(l / 360 * 2 * PI) * 1.5 * curCell.r;
+							double dx = cos((double)l / 360 * 2 * PI) * 1.5 * curCell.r;
+							double dy = sin((double)l / 360 * 2 * PI) * 1.5 * curCell.r;
 							if (l >= firstUnsafe + 360) break;
 							if (safe(info, curCell, curCell.x + dx, curCell.y + dy) != -1) l++;
 							else break;
@@ -933,8 +1015,8 @@ void player_ai(Info& info)
 						if (l >= firstUnsafe + 360) break;//no safe
 						r = l;
 						while (r < firstUnsafe + 360) {//扇形右边界
-							double dx = cos(r / 360 * 2 * PI) * 1.5 * curCell.r;
-							double dy = sin(r / 360 * 2 * PI) * 1.5 * curCell.r;
+							double dx = cos((double)r / 360 * 2 * PI) * 1.5 * curCell.r;
+							double dy = sin((double)r / 360 * 2 * PI) * 1.5 * curCell.r;
 							if (r >= firstUnsafe + 360) break;
 							if (safe(info, curCell, curCell.x + dx, curCell.y + dy) == -1) r++;
 							else break;
@@ -968,13 +1050,13 @@ void player_ai(Info& info)
 
 				}
 			}
-		}
+				}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-	}
+			}
 
 	double end_time = clock();
 
 	//cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
-}
+	}
