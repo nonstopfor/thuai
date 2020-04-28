@@ -285,8 +285,8 @@ double distAndTime(CellInfo& me, CellInfo& enemy, bool time = false) {
 	double distance = dist(me.x, me.y, enemy.x, enemy.y);
 	distance = distance - 2.0 / 3.0 * me.r;
 	double dist_hat_dir = compute_dir(enemy.x, enemy.y, me.x, me.y);
-	double mySpeed = me.v * cos(me.d - dist_hat_dir);
-	double enemySpeed = enemy.v * cos(enemy.v - dist_hat_dir);
+	double mySpeed = me.v * cos((me.d - dist_hat_dir) * PI / 180);
+	double enemySpeed = enemy.v * cos((enemy.v - dist_hat_dir) * PI / 180);
 	double myAcc = 10 / me.r, enAcc = 10 / enemy.r,
 		myTop = 20 / me.r;
 	double t = (myTop - mySpeed) / myAcc,
