@@ -432,7 +432,7 @@ double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor) {
 }
 
 struct block {
-	double score = -INF;
+	double score = 0;
 	static double M;//一个块的边长
 	static int NUM;//一维上块的总数
 	int i;
@@ -441,6 +441,7 @@ struct block {
 	double lefty;//左下角的y
 	double rightx;//右上角的x
 	double righty;//右上角的y
+	int cnt = 0;//区域内可吃的营养物质和细胞的总数量
 	void compute_pos(int _i, int _j) {
 		//i,j分别表示第一维和第二维的坐标
 		//初始化时调用
@@ -465,6 +466,7 @@ struct block {
 			if (nut.nur >= me.r) continue;
 			auto p = block::get_idx(nut.nux, nut.nuy);
 			if (p.first != i || p.second != j) continue;
+			++cnt;
 			tscore += PI * nut.nur * nut.nur;
 		}
 		for (int i = 0; i < info.cellInfo.size(); ++i) {
@@ -472,19 +474,26 @@ struct block {
 			if (cell.id == myID) continue;
 			auto p = block::get_idx(cell.x, cell.y);
 			if (p.first != i || p.second != j) continue;
-			if (cell.r / me.r < lam) tscore += PI * cell.r * cell.r + 500;
+			if (cell.r / me.r < lam) {
+				tscore += PI * cell.r * cell.r + 500;
+				++cnt;
+			}
 			if (me.r / cell.r < lam) tscore -= PI * cell.r * cell.r;
 		}
 		score = tscore;
 	}
+	double get_average_score() {
+		if (cnt == 0) return 0;
+		return score / cnt;
+	}
 };
-double block::M = 50;
-int block::NUM = 6;
+double block::M = 20;
+int block::NUM = 15;
 
 void player_ai(Info& info)
 {
 	double start_time = clock();
-	//cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
+	cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
 	//cout << "start!" << endl;
 	globalInfo = &info;
 
@@ -684,30 +693,31 @@ void player_ai(Info& info)
 		}
 		else {
 			vector<vector<block>>blocks(block::NUM, vector<block>(block::NUM));
-			int selectx = -1;
-			int selecty = -1;
-			double max_block_score = -INF;
 			if (info.round < 300) {
 				for (int i = 0; i < block::NUM; ++i) {
-					auto p = block::get_idx(curCell.x, curCell.y);
-					int myx = p.first;
-					int myy = p.second;
+					auto pos = block::get_idx(curCell.x, curCell.y);
+					int myx = pos.first;
+					int myy = pos.second;
 					if (abs(i - myx) > 1) continue;
 					for (int j = 0; j < block::NUM; ++j) {
 						if (abs(j - myy) > 1) continue;
 						blocks[i][j].compute_pos(i, j);
 						blocks[i][j].compute_score(curCell, info);
-						if (blocks[i][j].score > max_block_score) {
-							max_block_score = blocks[i][j].score;
-							selectx = i;
-							selecty = j;
-						}
 					}
 				}
 			}
 
-			vector<int>nutrient_idx;//将营养物质按平均收益大小排序
-
+			struct p {
+				double gain;
+				double x;
+				double y;
+				int idx = -1;//如果是营养物质，idx就不为-1，便于标记vis
+				p(double _gain, double _x, double _y, int _idx = -1) :gain(_gain), x(_x), y(_y), idx(_idx) {}
+				bool operator<(const p& t) {
+					return gain > t.gain;
+				}
+			};
+			vector<p>v;
 			for (int j = 0; j < info.nutrientInfo.size(); ++j) {
 				if (vis[j]) continue;
 				auto& k = info.nutrientInfo[j];
@@ -715,22 +725,18 @@ void player_ai(Info& info)
 				double t = 1 - sqrt(2) / 3;
 				if (min(abs(k.nux), abs(N - k.nux)) <= curCell.r * t) continue;
 				if (min(abs(k.nuy), abs(N - k.nuy)) <= curCell.r * t) continue;
-				if (selectx != -1) {
-					auto p = block::get_idx(k.nux, k.nuy);
-					if (p.first != selectx || p.second != selecty) continue;
-				}
+
 				int w = safe(info, curCell, k.nux, k.nuy, PI * k.nur * k.nur);
 				if (w != -2) {
 					//如果不是路径上有其他细胞
-					nutrient_idx.push_back(j);
+					double t = gain_nutrient(curCell, k);
+					auto pos = block::get_idx(k.nux, k.nuy);
+					auto& block = blocks[pos.first][pos.second];
+					t += block.get_average_score();
+					v.push_back(p(t, k.nux, k.nuy, j));
 				}
 			}
-			sort(nutrient_idx.begin(), nutrient_idx.end(), [&](int a, int b) {
-				double g1 = gain_nutrient(curCell, info.nutrientInfo[a]);
-				double g2 = gain_nutrient(curCell, info.nutrientInfo[b]);
-				return g1 > g2;
-				});
-			vector<int>cell_idx;//将其他小细胞按平均收益排序
+
 			for (int j = 0; j < info.cellInfo.size(); ++j) {
 				auto& k = info.cellInfo[j];
 				if (k.ownerid == myID) continue;
@@ -742,140 +748,22 @@ void player_ai(Info& info)
 				if (min(abs(k.y), abs(N - k.y)) <= curCell.r * t) continue;
 				if (!catchable(curCell, info.cellInfo[j])) continue;
 				//if (distCell(curCell, info.cellInfo[j]) > 1.5 * info.cellInfo[j].r) continue;
-				if (selectx != -1) {
-					auto p = block::get_idx(k.x, k.y);
-					if (p.first != selectx || p.second != selecty) continue;
-				}
 				int w = safe(info, curCell, k.x, k.y, PI * k.r * k.r);
 				if (w != -2) {
 					//如果不是路径上有其他细胞
-					cell_idx.push_back(j);
+					double t = gain_cell(curCell, k, cell_clamp[j]);
+					auto pos = block::get_idx(k.x, k.y);
+					auto& block = blocks[pos.first][pos.second];
+					t += block.get_average_score();
+					v.push_back(p(t, k.x, k.y));
 				}
 			}
-			sort(cell_idx.begin(), cell_idx.end(), [&](int a, int b) {
-				double g1 = gain_cell(curCell, info.cellInfo[a], cell_clamp[a]);
-				double g2 = gain_cell(curCell, info.cellInfo[b], cell_clamp[b]);
-				return g1 > g2;
-				});
-
-
-			if (info.round < 200 && cell_num < 6 && curCell.r > sqrt(2) * MINR && safe_cell(curCell, info) && cell_idx.size() + nutrient_idx.size() > 1) {
-				double gain_1 = 0;//不分裂的最大收益
-				double gain_2 = 0;//分裂的最大收益
-				double tx1 = 0, ty1 = 0;//不分裂时目标位置
-				double tx2 = 0, ty2 = 0;//分裂时冲向的目标位置
-				double gain_1_cell = cell_idx.empty() ? -1 : gain_cell(curCell, info.cellInfo[cell_idx[0]], cell_clamp[cell_idx[0]]);
-				double gain_1_nut = nutrient_idx.empty() ? -1 : gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]]);
-				if (gain_1_nut > gain_1_cell) {
-					gain_1 = gain_1_nut;
-					tx1 = info.nutrientInfo[nutrient_idx[0]].nux;
-					ty1 = info.nutrientInfo[nutrient_idx[0]].nuy;
-				}
-				else {
-					gain_1 = gain_1_cell;
-					tx1 = info.cellInfo[cell_idx[0]].x;
-					ty1 = info.cellInfo[cell_idx[0]].y;
-				}
-				struct p {
-					double gain;
-					double x;
-					double y;
-					int idx = -1;//如果是营养物质，idx就不为-1，便于标记vis
-					p(double _gain, double _x, double _y, int _idx = -1) :gain(_gain), x(_x), y(_y), idx(_idx) {}
-					bool operator<(const p& t) {
-						return gain > t.gain;
-					}
-				};
-				vector<p>tmp;
-				for (int k = 0; k < min((int)nutrient_idx.size(), 2); ++k) {
-					auto& nut = info.nutrientInfo[nutrient_idx[k]];
-					tmp.push_back(p(gain_nutrient(curCell, nut), nut.nux, nut.nuy, nutrient_idx[k]));
-				}
-				int cnt = 0;
-				for (int k = 0; k < cell_idx.size(); ++k) {
-					auto& cell = info.cellInfo[cell_idx[k]];
-					if (cell.r / (curCell.r / sqrt(2)) >= lam) continue;
-
-					tmp.push_back(p(gain_cell(curCell, cell, cell_clamp[cell_idx[k]]), cell.x, cell.y));
-					if (++cnt > 1) break;
-				}
-				sort(tmp.begin(), tmp.end());
-				//cout << info.round << ": " << tmp.size() << endl;
-				if (tmp.size() > 1) {
-					gain_2 = tmp[0].gain + tmp[1].gain;
-					if (gain_2 > gain_1 && division_safe(curCell, info, tmp[0].x, tmp[0].y,
-						0, RUN_FACTOR_DIV_FOR_NUT)) {
-						int dir1 = compute_dir(tmp[0].x, tmp[0].y, curCell.x, curCell.y);
-						info.myCommandList.addCommand(Division, curCell.id, dir1);
-						cell_num++;
-						if (tmp[0].idx != -1) vis[tmp[0].idx] = true;
-						if (tmp[1].idx != -1) vis[tmp[1].idx] = true;
-						continue;
-					}
-					else {
-						if (gain_1_nut > gain_1_cell) vis[nutrient_idx[0]] = true;
-						targetX = tx1;
-						targetY = ty1;
-					}
-				}
-				else {
-					if (gain_1_nut > gain_1_cell) vis[nutrient_idx[0]] = true;
-					targetX = tx1;
-					targetY = ty1;
-				}
-			}
-			else if (cell_idx.size() + nutrient_idx.size() > 0) {
-				double max_gain_nut = nutrient_idx.empty() ? -1 : gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]]);
-				double max_gain_cell = cell_idx.empty() ? -1 : gain_cell(curCell, info.cellInfo[cell_idx[0]], cell_clamp[cell_idx[0]]);
-				if (max_gain_nut > max_gain_cell) {
-					vis[nutrient_idx[0]] = true;
-					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
-					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
-				}
-				else {
-					//实际选择了，额外加上包围者
-					//cell_clamp[cell_idx[0]]++;
-					targetX = info.cellInfo[cell_idx[0]].x;
-					targetY = info.cellInfo[cell_idx[0]].y;
-				}
+			if (!v.empty()) {
+				sort(v.begin(), v.end());
+				targetX = v[0].x;
+				targetY = v[0].y;
 			}
 
-			/*
-			if (cell_idx.empty() && nutrient_idx.empty()) {
-
-			}
-			else if (cell_idx.empty()) {
-				if (nutrient_idx.size() >= 2 && myCell.size() < 6 && curCell.r > sqrt(2) * MINR && info.round < 150) {
-					int dir1 = compute_dir(info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy, curCell.x, curCell.y);
-					info.myCommandList.addCommand(Division, curCell.id, dir1);
-					continue;
-				}
-				else {
-					vis[nutrient_idx[0]] = true;
-
-					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
-					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
-
-				}
-			}
-			else if (nutrient_idx.empty()) {
-				targetX = info.cellInfo[cell_idx[0]].x;
-				targetY = info.cellInfo[cell_idx[0]].y;
-			}
-			else {
-				if (gain_cell(curCell, info.cellInfo[cell_idx[0]]) > gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]])) {
-					targetX = info.cellInfo[cell_idx[0]].x;
-					targetY = info.cellInfo[cell_idx[0]].y;
-				}
-				else {
-					vis[nutrient_idx[0]] = true;
-					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
-					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
-
-				}
-
-			}
-			*/
 #ifdef DEBUG
 			debugInfo[cur] << "\t After nutrient found. targetX = " << targetX << " targetY = " << targetY << endl;
 #endif
@@ -912,7 +800,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 				debugInfo[cur] << "\ttargetX < N + 1, direction = " << direction << endl;
 #endif
-		}
+			}
 			else
 			{
 				// check if enemy too near
@@ -949,7 +837,7 @@ void player_ai(Info& info)
 						if (direction2 < direction - 180) direction2 += 360;
 						else if (direction2 > direction + 180) direction2 -= 360;
 						direction = ((direction + direction2) / 2 + 360) % 360;
-				}
+					}
 #ifdef DEBUG
 					debugInfo[cur] << "\t\tRun Away, direction = " << direction << endl;
 #endif
@@ -1050,13 +938,13 @@ void player_ai(Info& info)
 
 				}
 			}
-				}
+			}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-			}
+	}
 
 	double end_time = clock();
 
 	//cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
-	}
+		}
