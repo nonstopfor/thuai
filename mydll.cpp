@@ -426,22 +426,13 @@ double brakeLen(CellInfo& cell) {
 	return maxSpd * maxSpd / 2 / acc;
 }
 
-double speedInDirection(CellInfo& me,double direction){
-    return cos((direction-me.d)/180.0*PI)*me.v;
-}
-
-double predictSelfSpeed(CellInfo& me,CellInfo& enemy){
-    double direction=atan2(enemy.y-me.y,enemy.x-me.x)/PI*180;
-    return 10/me.r+speedInDirection(me,direction);
-}
-
 double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor) {
 	const double eatFactor = 0.9;
 	if (enemy.r * eatFactor < me.r) return 1;//No danger
-	double moveDist = distCell(me, enemy) - run_factor * 20 / enemy.r - 2 * enemy.r / 3 - run_factor * predictSelfSpeed(me,enemy);
+	double moveDist = distCell(me, enemy) - run_factor * 20 / enemy.r - 2 * enemy.r / 3;
 	double newEnemyR = enemy.r / sqrt(2);
 	if (newEnemyR * eatFactor < me.r) return moveDist - brakeLen(me);//不能分裂吃，只能移动吃
-	double divideDist = distCell(me, enemy) - 1.2 * newEnemyR - 2 * newEnemyR / 3 - run_factor * predictSelfSpeed(me,enemy);
+	double divideDist = distCell(me, enemy) - 1.2 * newEnemyR - 2 * newEnemyR / 3;
 	return min(moveDist, divideDist) - brakeLen(me);
 	//return distCell(me, enemy) - 1.5 * min(20 / enemy.r, enemy.v + 10 / enemy.r) - 2 * enemy.r / 3;
 }
@@ -449,7 +440,7 @@ double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor) {
 void player_ai(Info& info)
 {
 	double start_time = clock();
-	cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
+	//cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
 	//cout << "start!" << endl;
 	globalInfo = &info;
 
@@ -873,7 +864,7 @@ void player_ai(Info& info)
 						else if (direction > 315) direction = 360 - direction;
 						else if (direction < 270) direction = 180;
 						else direction = 0;
-			}
+					}
 					else if (predictY >= N) {
 						if (direction < 45) direction = 360 - direction;
 						else if (direction > 135) direction = 360 - direction;
@@ -926,7 +917,7 @@ void player_ai(Info& info)
 							flag = true;
 						}
 						l = r;//找下个左边界
-						}
+					}
 					if (flag) {
 						direction = (maxl + maxr) / 2;
 						direction %= 360;
@@ -947,7 +938,7 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-					}
+				}
 			}
 		}
 #ifdef DEBUG
