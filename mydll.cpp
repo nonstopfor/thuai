@@ -53,7 +53,7 @@ double MINBOUND = 0.0;
 double MAXDIST = 425;
 double UNIONDIST = 60; // if too far away from ally big cells, don't union
 double DISTFACTOR = 1.1;
-int DISASTERROUND = 750;
+int DISASTERROUND = 800;
 int HELP_RANGE = 50;
 int MAX_CELL_NUM = 20;
 
@@ -67,7 +67,7 @@ int get_helper_range(int round) {
 int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cellsIndanger, int curCell,
 	int round, Info& info) {
 
-	if (round < 750) return -1;
+	if (round < 800) return -1;
 	//else return maxCell;
 	double maxR = cells[maxCell].r;
 	bool minboundJudge = cells[curCell].r > MINBOUND * maxR;
@@ -441,7 +441,7 @@ double predictSelfSpeed(CellInfo& me,CellInfo& enemy){
 double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor) {
 	const double eatFactor = 0.9;
 	if (enemy.r * eatFactor < me.r) return 1;//No danger
-	double moveDist = distCell(me, enemy) - run_factor * 20 / enemy.r - 2 * enemy.r / 3 - run_factor * predictSelfSpeed(me,enemy);
+	double moveDist = distCell(me, enemy) - run_factor * 20 / enemy.r - 2 * enemy.r / 3;
 	double newEnemyR = enemy.r / sqrt(2);
 	int toEnemy = atan2(enemy.y - me.y, enemy.x - me.x) / PI * 180;
 	if (newEnemyR * eatFactor < me.r) return moveDist - brakeLen(me, toEnemy);//不能分裂吃，只能移动吃
@@ -453,7 +453,7 @@ double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor) {
 void player_ai(Info& info)
 {
 	double start_time = clock();
-	cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
+	//cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
 	//cout << "start!" << endl;
 	globalInfo = &info;
 
@@ -636,8 +636,8 @@ void player_ai(Info& info)
 
 				info.myCommandList.addCommand(Move, curCell.id, direction);
 				continue;
-				}
-				}
+			}
+		}
 
 
 
@@ -772,55 +772,20 @@ void player_ai(Info& info)
 				}
 				else {
 					//实际选择了，额外加上包围者
-					//cell_clamp[cell_idx[0]]++;
+					//if (cell_clamp[cell_idx[0]] > 1)
+						//cell_clamp[cell_idx[0]]++;
 					targetX = info.cellInfo[cell_idx[0]].x;
 					targetY = info.cellInfo[cell_idx[0]].y;
 				}
 			}
 
-			/*
-			if (cell_idx.empty() && nutrient_idx.empty()) {
-
-			}
-			else if (cell_idx.empty()) {
-				if (nutrient_idx.size() >= 2 && myCell.size() < 6 && curCell.r > sqrt(2) * MINR && info.round < 150) {
-					int dir1 = compute_dir(info.nutrientInfo[nutrient_idx[1]].nux, info.nutrientInfo[nutrient_idx[1]].nuy, curCell.x, curCell.y);
-					info.myCommandList.addCommand(Division, curCell.id, dir1);
-					continue;
-				}
-				else {
-					vis[nutrient_idx[0]] = true;
-
-					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
-					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
-
-				}
-			}
-			else if (nutrient_idx.empty()) {
-				targetX = info.cellInfo[cell_idx[0]].x;
-				targetY = info.cellInfo[cell_idx[0]].y;
-			}
-			else {
-				if (gain_cell(curCell, info.cellInfo[cell_idx[0]]) > gain_nutrient(curCell, info.nutrientInfo[nutrient_idx[0]])) {
-					targetX = info.cellInfo[cell_idx[0]].x;
-					targetY = info.cellInfo[cell_idx[0]].y;
-				}
-				else {
-					vis[nutrient_idx[0]] = true;
-					targetX = info.nutrientInfo[nutrient_idx[0]].nux;
-					targetY = info.nutrientInfo[nutrient_idx[0]].nuy;
-
-				}
-
-			}
-			*/
 #ifdef DEBUG
 			debugInfo[cur] << "\t After nutrient found. targetX = " << targetX << " targetY = " << targetY << endl;
 #endif
 
 		}
 
-		if (info.round > 750 && cur == maxCell) {
+		if (info.round > 800 && cur == maxCell) {
 			int nearest = -1;//最近敌人id
 			for (int k = 0; k < info.cellInfo.size(); k++) {
 				if (info.cellInfo[k].ownerid == myID) continue;
@@ -841,7 +806,7 @@ void player_ai(Info& info)
 #ifdef DEBUG
 			debugInfo[cur] << "\tinfo.round > 800 && cur == maxCell, nearest = " << nearest << "direction = " << direction << endl;
 #endif
-			}
+		}
 		else {
 			if (targetX < N + 1)
 			{
@@ -986,15 +951,15 @@ void player_ai(Info& info)
 					else debugInfo[cur] << endl;
 #endif
 
-					}
+				}
 			}
 		}
 #ifdef DEBUG
 		cout << debugInfo[cur].str();
 #endif
-					}
+	}
 
 	double end_time = clock();
 
 	//cout << "end! time: " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
-				}
+}
