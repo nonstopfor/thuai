@@ -191,7 +191,7 @@ int safe(Info& info, CellInfo& me, double x2, double y2, double ds) {
 		double ar = cell.r;
 		auto p3 = make_pair(x, y);
 		if (r / cell.r < lam && distCell(me, cell, true) < 20 / cell.r) return -2;
-		if (abs(point_dir(p3, p1) - cell.d) > 30 && abs(point_dir(p3, p2) - cell.d) > angle) continue;
+		if (abs(point_dir(p3, p1) - cell.d) > 30 && abs(point_dir(p3, p2) - cell.d) > angle && dist(cell.x, cell.y, x2, y2) > 0.5 * dist(me.x, me.y, x2, y2)) continue;
 		//if (abs(point_dir(p3, p2) - cell.d) > 5) continue;
 		double new_ar = sqrt((PI * ar * ar + ds) / PI);
 		if (judge_projection(p1, p2, p3)) {
@@ -440,7 +440,7 @@ double get_danger_dist(CellInfo& me, CellInfo& enemy, double run_factor) {
 void player_ai(Info& info)
 {
 	double start_time = clock();
-	//cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
+	cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
 	//cout << "start!" << endl;
 	globalInfo = &info;
 
