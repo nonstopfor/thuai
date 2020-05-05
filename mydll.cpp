@@ -53,7 +53,7 @@ double MINBOUND = 0.0;
 double MAXDIST = 425;
 double UNIONDIST = 60; // if too far away from ally big cells, don't union
 double DISTFACTOR = 1.1;
-int DISASTERROUND = 700;
+int DISASTERROUND = 750;
 int HELP_RANGE = 50;
 int MAX_CELL_NUM = 20;
 
@@ -67,7 +67,7 @@ int get_helper_range(int round) {
 int splitCheck(std::vector<CellInfo>& cells, int maxCell, std::vector<int>& cellsIndanger, int curCell,
 	int round, Info& info) {
 
-	if (round < 800) return -1;
+	if (round < 750) return -1;
 	//else return maxCell;
 	double maxR = cells[maxCell].r;
 	bool minboundJudge = cells[curCell].r > MINBOUND * maxR;
@@ -807,7 +807,7 @@ void player_ai(Info& info)
 
 		}
 
-		if (info.round > 800 && cur == maxCell) {
+		if (info.round > 750 && cur == maxCell) {
 			int nearest = -1;//最近敌人id
 			for (int k = 0; k < info.cellInfo.size(); k++) {
 				if (info.cellInfo[k].ownerid == myID) continue;
