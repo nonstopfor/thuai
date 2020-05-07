@@ -14,9 +14,9 @@ using namespace std;
 #define PI 3.1415926
 #define LAM 0.9
 #define N 300
+#define MAX_SCORE 1e10
 TPlayerID myID;
 /*
-ָ
 info.myCommandList.addCommand(Division,aim_cell_id,direction);
 info.myCommandList.addCommand(Move,aim_cell_id,direction);
 info.myCommandList.addCommand(Spit,aim_cell_id,direction);
@@ -129,12 +129,7 @@ struct status {
 		cell.x = x;
 		cell.y = y;
 		cell.r = r;
-		for (auto& nut : nut_info) {
-			if (eat_nut(cell, nut)) {
-				score += (PI * nut.nur * nut.nur) / exp(k * (step - 1));
-				cell.r = sqrt(cell.r * cell.r + nut.nur * nut.nur);
-			}
-		}
+		//先对细胞进行判断，因为有可能发现不安全，直接return，可以省时间
 		for (auto& enemy : cell_info) {
 			if (enemy.ownerid == myID) continue;
 			if (eat_cell(cell, enemy)) {
@@ -143,8 +138,17 @@ struct status {
 
 			}
 			else if (cell.r / enemy.r < LAM && dist(cell.x, cell.y, enemy.x, enemy.y) < threatenR(cell, enemy) + brakeLen(cell)) {
-				score -= (PI * cell.r * cell.r + 500) / exp(k * (step - 1)) + 100000;
-				break;
+				//score -= (PI * cell.r * cell.r + 500) / exp(k * (step - 1)) + 100000;
+				//break;
+				score = -MAX_SCORE;
+				return;
+			}
+		}
+
+		for (auto& nut : nut_info) {
+			if (eat_nut(cell, nut)) {
+				score += (PI * nut.nur * nut.nur) / exp(k * (step - 1));
+				cell.r = sqrt(cell.r * cell.r + nut.nur * nut.nur);
 			}
 		}
 
@@ -192,10 +196,21 @@ int get_best_move_dir(status s0, Info& info, double start_time) {
 	//只考虑一定范围内的细胞和营养物质
 	vector<NutrientInfo>newnutinfo;
 	vector<CellInfo>newcellinfo;
+
+	double minDistOfEligibleNut = 1e10,
+		   distLimit = 10 * s0.r;
+	NutrientInfo mostCloseNut;//之后最好改成下标，如果之后对nut有更改的话
 	for (auto& nut : info.nutrientInfo) {
-		if (dist(nut.nux, nut.nuy, s0.x, s0.y) > 10 * s0.r) continue;
+		double distance = dist(nut.nux, nut.nuy, s0.x, s0.y);
+		if (s0.r > nut.nur && distance < minDistOfEligibleNut) {
+			minDistOfEligibleNut = distance;
+			mostCloseNut = nut;
+		}
+		if (distance > distLimit) continue;
 		newnutinfo.push_back(nut);
 	}
+	if (newnutinfo.size() == 0) newnutinfo.push_back(mostCloseNut);
+
 	for (auto& cell : info.cellInfo) {
 		if (dist(cell.x, cell.y, s0.x, s0.y > 10 * s0.r)) continue;
 		newcellinfo.push_back(cell);
