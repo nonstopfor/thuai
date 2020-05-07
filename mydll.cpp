@@ -5,6 +5,10 @@
 #include <time.h>
 #include <algorithm>
 #include <cstring>
+#include <queue>
+
+using namespace std;
+
 #define MI 23
 #define NI 19991
 #define PI 3.1415926
@@ -58,7 +62,7 @@ struct status {
 };
 
 int get_move_dir(status s0, Info& info) {
-
+		
 }
 
 void player_ai(Info& info)
