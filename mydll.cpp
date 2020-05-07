@@ -198,7 +198,8 @@ int get_best_move_dir(status s0, Info& info, double start_time) {
 	vector<CellInfo>newcellinfo;
 
 	double minDistOfEligibleNut = 1e10,
-		   distLimit = 10 * s0.r;
+		   distLimit = 10 * s0.r,
+		   t = 1 - sqrt(2) / 3;
 	NutrientInfo mostCloseNut;//之后最好改成下标，如果之后对nut有更改的话
 	for (auto& nut : info.nutrientInfo) {
 		double distance = dist(nut.nux, nut.nuy, s0.x, s0.y);
@@ -206,7 +207,10 @@ int get_best_move_dir(status s0, Info& info, double start_time) {
 			minDistOfEligibleNut = distance;
 			mostCloseNut = nut;
 		}
-		if (distance > distLimit) continue;
+		if (distance > distLimit ||
+			fmin(fabs(nut.nux), fabs(BFSIZE-nut.nux)) <= s0.r * t ||//地图卡边
+			fmin(fabs(nut.nuy), fabs(BFSIZE-nut.nuy)) <= s0.r * t)
+			continue;
 		newnutinfo.push_back(nut);
 	}
 	if (newnutinfo.size() == 0) newnutinfo.push_back(mostCloseNut);
