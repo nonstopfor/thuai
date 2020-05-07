@@ -31,7 +31,27 @@ struct status {
 	}
 	status move(int dir) {
 		status t = *this;
-
+        const double maxSpeed = 20.0 / t.r;
+        const double acc = 10.0 / t.r;
+        t.v *= cos(PI * (dir-t.d) / 180.0);
+        double deltaX = 0;
+        if(t.v + acc > maxSpeed){
+            double accTime = (maxSpeed - t.v) / acc;
+            deltaX = t.v * accTime + 0.5 * acc * accTime * accTime;
+            deltaX += maxSpeed * (1.0 - accTime);
+            t.v = maxSpeed;
+        }else{
+            deltaX = t.v + 0.5 * acc;
+            t.v += acc;
+        }
+        t.x += deltaX * cos(dir * PI / 180.0);
+        t.y += deltaX * sin(dir * PI / 180.0);
+        t.d = dir;
+        if(t.x < 0) t.x = 0;
+        else if(t.x > N) t.x = N;
+        if(t.y < 0) t.y = 0;
+        else if(t.y > N) t.y = N;
+        return t;
 	}
 };
 
