@@ -47,10 +47,10 @@ struct status {
         t.x += deltaX * cos(dir * PI / 180.0);
         t.y += deltaX * sin(dir * PI / 180.0);
         t.d = dir;
-        if(t.x < 0) t.x = 0;
-        else if(t.x > N) t.x = N;
-        if(t.y < 0) t.y = 0;
-        else if(t.y > N) t.y = N;
+        if(t.x < t.r) t.x = t.r;
+        else if(t.x > N - t.r) t.x = N - t.r;
+        if(t.y < t.r) t.y = t.r;
+        else if(t.y > N - t.r) t.y = N - t.r;
         return t;
 	}
 };
