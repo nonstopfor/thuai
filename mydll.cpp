@@ -35,10 +35,10 @@ double distCell(CellInfo& c1, CellInfo& c2, bool removeRadius = false) {
 }
 
 double maxSpeed(CellInfo& cell) {
-	return 20 / cell.r;
+	return 20.0 / cell.r;
 }
 double accelerate(CellInfo& cell) {
-	return 10 / cell.r;
+	return 10.0 / cell.r;
 }
 double gain_nut(CellInfo& me, NutrientInfo& nut) {
 	double u = dist(me.x, me.y, nut.nux, nut.nuy) - 2 * me.r / 3;
