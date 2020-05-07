@@ -7,6 +7,7 @@
 #include <cstring>
 #include <queue>
 #include <map>
+#include <assert.h>
 using namespace std;
 
 #define MI 23
@@ -39,6 +40,24 @@ double maxSpeed(CellInfo& cell) {
 double accelerate(CellInfo& cell) {
 	return 10 / cell.r;
 }
+double gain_nut(CellInfo& me, NutrientInfo& nut) {
+	double u = dist(me.x, me.y, nut.nux, nut.nuy) - 2 * me.r / 3;
+	double gain = PI * nut.nur * nut.nur * maxSpeed(me) / u;
+	return gain;
+}
+double gain_cell_eat(CellInfo& me, CellInfo& enemy) {
+	//吃对方
+	double u = dist(me.x, me.y, enemy.x, enemy.y) - 2 * me.r / 3;
+	double gain = (PI * enemy.r * enemy.r + 500) * maxSpeed(me) / u;
+	return gain;
+}
+double gain_cell_run(CellInfo& me, CellInfo& enemy) {
+	//逃跑
+	double u = dist(me.x, me.y, enemy.x, enemy.y) - 2 * enemy.r / 3;
+	double gain = (PI * enemy.r * enemy.r + 500) * 2 * (maxSpeed(me) + maxSpeed(enemy)) / u;
+	return -gain;
+}
+
 double brakeLen(CellInfo& cell) {
 	double maxSpd = maxSpeed(cell),
 		acc = accelerate(cell);
@@ -84,7 +103,7 @@ struct status {
 	double score = 0;//相当于g
 	int fa = -1;//父亲在vector中的下标
 	int num = 0;//在vector中的下标
-	double k = 0.3;//奖励衰减因子
+	double k = 1.5;//奖励衰减因子
 	double h = 0;//估价值
 	status(double _x, double _y, double _r, double _v, int _d, int _step = 0) :x(_x), y(_y), r(_r), v(_v), d(_d), step(_step) {
 
@@ -136,6 +155,8 @@ struct status {
 		cell.x = x;
 		cell.y = y;
 		cell.r = r;
+		cell.v = v;
+		cell.d = d;
 		//先对细胞进行判断，因为有可能发现不安全，直接return，可以省时间
 		for (auto& enemy : cell_info) {
 			if (enemy.ownerid == myID) continue;
@@ -144,11 +165,9 @@ struct status {
 				cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
 
 			}
-			else if (cell.r / enemy.r < LAM && dist(cell.x, cell.y, enemy.x, enemy.y) < threatenR(cell, enemy) + brakeLen(cell)) {
-				score -= (PI * cell.r * cell.r + 500) / exp(k * (step - 1)) * 10; //+ 100000;
-				//break;
-				//score = -MAX_SCORE;
-				//return;
+			else if (eat_cell(enemy, cell)) {
+				score = -MAX_SCORE;
+				return;
 			}
 		}
 
@@ -160,53 +179,52 @@ struct status {
 		}
 
 		//估计h值
+		int count = 0;
 		for (auto& nut : nut_info) {
 			if (nut.nur >= r) continue;
-			int dir = point_dir(x, y, nut.nux, nut.nuy);
-			if (abs(dir - d) < 90) {
-				if (dist(x, y, nut.nux, nut.nuy) * sin(abs(dir - d) * PI / 180) < r * 2 / 3) {
-					h += PI * nut.nur * nut.nur;
-				}
-			}
+			h += gain_nut(cell, nut);
+			++count;
 		}
 
 		for (auto& enemy : cell_info) {
 			if (enemy.ownerid == myID) continue;
 			if (enemy.r / r >= LAM && r / enemy.r >= LAM) continue;
-			int dir = point_dir(x, y, enemy.x, enemy.y);
-			if (abs(dir - d) < 90) {
-				if (enemy.r / r < LAM) {
-					if (dist(x, y, enemy.x, enemy.y) * sin(abs(dir - d) * PI / 180) < r * 2 / 3) {
-						h += PI * enemy.r * enemy.r + 500;
-					}
-				}
-				if (r / enemy.r < LAM) {
-					if (dist(x, y, enemy.x, enemy.y) * sin(abs(dir - d) * PI / 180) < enemy.r * 2 / 3) {
-						h -= PI * r * r + 500;
-					}
-				}
+			if (enemy.r / r < LAM) {
+				h += gain_cell_eat(cell, enemy);
+				++count;
+			}
+			else if (r / enemy.r < LAM) {
+				//威胁算在g里面
+				score += gain_cell_run(cell, enemy);
+				//++count;
 			}
 		}
+		if (count) h /= count;
 	}
 };
 
 vector<int>get_dirs(status s0, Info& info) {
 	vector<int>dirs;
-	//暂时按10度一间隔
-	for (int i = 0; i < 360; i += 5) {
-		dirs.push_back(i);
+	//离当前方向较近的更密
+	for (int i = 0; i < 60; i += 5) {
+		dirs.push_back((i + s0.d) % 360);
+		dirs.push_back((s0.d - i + 360) % 360);
+	}
+	for (int i = 60; i < 180; i += 10) {
+		dirs.push_back((i + s0.d) % 360);
+		dirs.push_back((s0.d - i + 360) % 360);
 	}
 	return dirs;
 }
 int times = 0;
-int get_best_move_dir(status s0, Info& info, double start_time) {
+int get_best_move_dir(status s0, Info& info, double start_time, double max_time) {
 	//只考虑一定范围内的细胞和营养物质
 	vector<NutrientInfo>newnutinfo;
 	vector<CellInfo>newcellinfo;
 
 	double minDistOfEligibleNut = 1e10,
-		   distLimit = 10 * s0.r,
-		   t = 1 - sqrt(2) / 3;
+		distLimit = 10 * s0.r,
+		t = 1 - sqrt(2) / 3;
 	NutrientInfo mostCloseNut;//之后最好改成下标，如果之后对nut有更改的话
 	for (auto& nut : info.nutrientInfo) {
 		double distance = dist(nut.nux, nut.nuy, s0.x, s0.y);
@@ -215,8 +233,8 @@ int get_best_move_dir(status s0, Info& info, double start_time) {
 			mostCloseNut = nut;
 		}
 		if (distance > distLimit ||
-			fmin(fabs(nut.nux), fabs(BFSIZE-nut.nux)) <= s0.r * t ||//地图卡边
-			fmin(fabs(nut.nuy), fabs(BFSIZE-nut.nuy)) <= s0.r * t)
+			fmin(fabs(nut.nux), fabs(BFSIZE - nut.nux)) <= s0.r * t ||//地图卡边
+			fmin(fabs(nut.nuy), fabs(BFSIZE - nut.nuy)) <= s0.r * t)
 			continue;
 		newnutinfo.push_back(nut);
 	}
@@ -229,7 +247,9 @@ int get_best_move_dir(status s0, Info& info, double start_time) {
 	//cout << "newnutinfo.size():" << newnutinfo.size() << endl;
 	//cout << "newcellinfo.size():" << newcellinfo.size() << endl;
 	all_status.clear();
+	assert(all_status.empty());
 	all_status.push_back(s0);
+	assert(s0.num == 0);
 	priority_queue<status>q;
 	//queue<status>q;
 	vector<int>dirs = get_dirs(s0, info);
@@ -240,12 +260,11 @@ int get_best_move_dir(status s0, Info& info, double start_time) {
 		q.push(w);
 		all_status.push_back(w);
 	}
-	double max_ave_score = -1;
+	double max_ave_score = -1e10;
 	int best_status_num = 0;
 	int max_step = 0;
 	while (!q.empty()) {
 		++times;
-		double tmp_t = clock();
 		status st = q.top(); q.pop();
 		//cout << st.step << endl;
 		//cout << st.get_root() << endl;
@@ -256,7 +275,7 @@ int get_best_move_dir(status s0, Info& info, double start_time) {
 			best_status_num = st.num;
 		}
 		double end_time = clock();
-		if ((end_time - start_time) / CLOCKS_PER_SEC * 1000 > 140) break;
+		if ((end_time - start_time) / CLOCKS_PER_SEC * 1000 > max_time) break;
 		if (st.step > 6) continue;//大于6步就不再搜了
 		vector<int>tmp_dirs = get_dirs(st, info);
 		for (auto& dir : tmp_dirs) {
@@ -266,14 +285,19 @@ int get_best_move_dir(status s0, Info& info, double start_time) {
 			q.push(w);
 			all_status.push_back(w);
 		}
-		//cout << q.size() << endl;
-		//cout << "one status time:" << (clock() - tmp_t) / CLOCKS_PER_SEC * 1000 << endl;
-		//cout << times << endl;
+
 	}
 	int best_dir = 0;
+	int o = 0;
 	while (best_status_num != 0) {
+		if (best_status_num >= all_status.size() || best_status_num < 0) {
+			cout << "best_status_num >= all_status.size():" << best_status_num << "/" << all_status.size() << endl;
+			break;
+		}
 		best_dir = all_status[best_status_num].d;
 		best_status_num = all_status[best_status_num].fa;
+		++o;
+		cout << o << endl;
 	}
 	cout << "best_dir:" << best_dir << endl;
 	cout << "max step:" << max_step << endl;
@@ -293,13 +317,15 @@ void player_ai(Info& info)
 			myCell.push_back(info.cellInfo[i]);
 
 	if (myCell.empty()) return;
-	times = 0;
+
 	int cell_num = myCell.size();
 
 	for (int cur = 0; cur < myCell.size(); cur++)
 	{
+		times = 0;
 		CellInfo& curCell = myCell[cur];
 		//先判断能否分裂直接吃细胞
+		/*
 		if (cell_num < 6) {
 			bool div_eat = false;
 			int div_select = -1;
@@ -331,8 +357,12 @@ void player_ai(Info& info)
 
 			}
 		}
+		*/
+
 		status s0(curCell.x, curCell.y, curCell.r, curCell.v, curCell.d);
-		int dir = get_best_move_dir(s0, info, start_time);
+		double tmp_start_time = clock();
+		double max_time = 120.0 / cell_num;
+		int dir = get_best_move_dir(s0, info, tmp_start_time, max_time);
 		info.myCommandList.addCommand(Move, curCell.id, dir);
 
 		cout << "times: " << times << endl;
