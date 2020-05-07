@@ -26,6 +26,13 @@ double dist(double x1, double y1, double x2, double y2) {
 	double deltaY = y1 - y2;
 	return sqrt(deltaX * deltaX + deltaY * deltaY);
 }
+
+double distCell(CellInfo& c1, CellInfo& c2, bool removeRadius = false) {
+	double distRaw = dist(c1.x, c1.y, c2.x, c2.y);
+	if (removeRadius) distRaw -= c1.r + c2.r;
+	return distRaw;
+}
+
 double maxSpeed(CellInfo& cell) {
 	return 20 / cell.r;
 }
@@ -43,7 +50,7 @@ double threatenR(CellInfo& myCell, CellInfo& cell) {
 	double newEnemyR = cell.r / sqrt(2);
 	bool canDivEatMe = newEnemyR * LAM > myCell.r;
 	double divDist = canDivEatMe ? 1.2 * newEnemyR : 0;
-	return 2.0 / 3 * cell.r + divDist + 2.0 * maxSpeed(cell);
+	return 2.0 / 3 * cell.r + divDist + 4.0 * maxSpeed(cell);
 }
 int point_dir(double x1, double y1, double x2, double y2) {
 	double dx = x2 - x1;
@@ -77,7 +84,7 @@ struct status {
 	double score = 0;//相当于g
 	int fa = -1;//父亲在vector中的下标
 	int num = 0;//在vector中的下标
-	double k = 0.5;//奖励衰减因子
+	double k = 0.3;//奖励衰减因子
 	double h = 0;//估价值
 	status(double _x, double _y, double _r, double _v, int _d, int _step = 0) :x(_x), y(_y), r(_r), v(_v), d(_d), step(_step) {
 
@@ -236,14 +243,12 @@ int get_best_move_dir(status s0, Info& info, double start_time) {
 	double max_ave_score = -1;
 	int best_status_num = 0;
 	int max_step = 0;
-	map<int, int>cnt;
 	while (!q.empty()) {
 		++times;
 		double tmp_t = clock();
 		status st = q.top(); q.pop();
 		//cout << st.step << endl;
 		//cout << st.get_root() << endl;
-		cnt[st.get_root()]++;
 		max_step = max(max_step, st.step);
 		double score = st.get_ave_score();
 		if (score > max_ave_score) {
@@ -270,7 +275,6 @@ int get_best_move_dir(status s0, Info& info, double start_time) {
 		best_dir = all_status[best_status_num].d;
 		best_status_num = all_status[best_status_num].fa;
 	}
-	cout << "0/all:" << cnt[1] << "/" << times << endl;
 	cout << "best_dir:" << best_dir << endl;
 	cout << "max step:" << max_step << endl;
 	return best_dir;
@@ -290,15 +294,50 @@ void player_ai(Info& info)
 
 	if (myCell.empty()) return;
 	times = 0;
+	int cell_num = myCell.size();
+
 	for (int cur = 0; cur < myCell.size(); cur++)
 	{
 		CellInfo& curCell = myCell[cur];
+		//先判断能否分裂直接吃细胞
+		if (cell_num < 6) {
+			bool div_eat = false;
+			int div_select = -1;
+			double max_r = 0.0;
+			for (int i = 0; i < info.cellInfo.size(); ++i) {
+				auto& cell = info.cellInfo[i];
+				if (cell.ownerid == myID) continue;
+				if (cell.invincibleround) continue;
+				if (cell.r / (curCell.r / (sqrt(2.0))) >= LAM) continue;
+				double d = distCell(curCell, cell);
+				if (d < (1.2 + (2.0 / 3)) * curCell.r / sqrt(2.0)) {
+					if (cell.r > max_r) {
+						max_r = cell.r;
+						div_select = i;
+						div_eat = true;
+					}
+
+				}
+			}
+			if (div_eat) {
+				auto& cell = info.cellInfo[div_select];
+
+				double dx = cell.x - curCell.x;
+				double dy = cell.y - curCell.y;
+				int direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
+				info.myCommandList.addCommand(Division, curCell.id, direction);
+				cell_num++;
+				continue;
+
+			}
+		}
 		status s0(curCell.x, curCell.y, curCell.r, curCell.v, curCell.d);
 		int dir = get_best_move_dir(s0, info, start_time);
 		info.myCommandList.addCommand(Move, curCell.id, dir);
-	}
-	cout << "times: " << times << endl;
-	double end_time = clock();
-	cout << "time(ms): " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
-}
 
+		cout << "times: " << times << endl;
+		double end_time = clock();
+		cout << "time(ms): " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
+	}
+
+}
