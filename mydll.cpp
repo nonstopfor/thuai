@@ -138,10 +138,10 @@ struct status {
 
 			}
 			else if (cell.r / enemy.r < LAM && dist(cell.x, cell.y, enemy.x, enemy.y) < threatenR(cell, enemy) + brakeLen(cell)) {
-				//score -= (PI * cell.r * cell.r + 500) / exp(k * (step - 1)) + 100000;
+				score -= (PI * cell.r * cell.r + 500) / exp(k * (step - 1)) * 10; //+ 100000;
 				//break;
-				score = -MAX_SCORE;
-				return;
+				//score = -MAX_SCORE;
+				//return;
 			}
 		}
 
