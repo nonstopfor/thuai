@@ -26,7 +26,9 @@ struct status {
 	int d;
 	int step = 0;//搜索步数
 	double score = 0;
-	status(double _x, double _y, double _r, double _v, int _d, int _step) :x(_x), y(_y), r(_r), v(_v), step(_step) {
+	status* fa = nullptr;
+	int choosed = -1;//由上一个状态选择什么方向移动而来
+	status(double _x, double _y, double _r, double _v, int _d, int _step = 0) :x(_x), y(_y), r(_r), v(_v), step(_step) {
 
 	}
 	status move(int dir) {
@@ -34,6 +36,10 @@ struct status {
 
 	}
 };
+
+int get_move_dir(status s0, Info& info) {
+
+}
 
 void player_ai(Info& info)
 {
@@ -48,7 +54,10 @@ void player_ai(Info& info)
 	for (int cur = 0; cur < myCell.size(); cur++)
 	{
 		CellInfo& curCell = myCell[cur];
+		status s0(curCell.x, curCell.y, curCell.r, curCell.v, curCell.d);
+		int dir = get_move_dir(s0, info);
 
 	}
+
 }
 
