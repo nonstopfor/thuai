@@ -16,6 +16,8 @@ using namespace std;
 #define LAM 0.9
 #define N 300
 #define MAX_SCORE 1e10
+#define PREY_ROUND 300
+#define DIV_FOR_NUT_MINR 10
 TPlayerID myID;
 /*
 info.myCommandList.addCommand(Division,aim_cell_id,direction);
@@ -199,7 +201,7 @@ struct status {
 		for (auto& enemy : cell_info) {
 			if (enemy.ownerid == myID) continue;
 			if (eat_cell(cell, enemy)) {
-				if (info.round > 300 || step == 1) {
+				if (info.round > PREY_ROUND || step == 1) {
 					score += (PI * enemy.r * enemy.r + 500) / step;
 					cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
 					end = true;
@@ -232,7 +234,7 @@ struct status {
 				if (enemy.ownerid == myID) continue;
 				if (enemy.r / r >= LAM && r / enemy.r >= LAM) continue;
 				if (enemy.r / r < LAM) {
-					if (info.round > 300) {
+					if (info.round > PREY_ROUND) {
 						h += gain_cell_eat(cell, enemy);
 						++count;
 					}
@@ -415,6 +417,15 @@ bool div_eat(Info& info, CellInfo& myCell, CellInfo& enemy) {
 	return div_eat;
 }
 
+bool div_eat_nut(Info& info, CellInfo& myCell, NutrientInfo& nut) {
+	bool div_eat = false;
+	if ((myCell.r / (sqrt(2.0))) < nut.nur) return false;
+	double d = dist(myCell.x, myCell.y, nut.nux, nut.nuy);
+	if (d < (1.2 + (2.0 / 3)) * myCell.r / sqrt(2.0))
+		div_eat = true;
+	return div_eat;
+}
+
 bool div_safe(Info& info, CellInfo& me, double tx, double ty,
 	double add_r) {
 	//add_r是被吃目标的半径
@@ -434,9 +445,8 @@ bool div_safe(Info& info, CellInfo& me, double tx, double ty,
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		auto& enemy = info.cellInfo[i];
 		if (enemy.ownerid == myID) continue;
-		if (stay.r / enemy.r >= LAM) continue;
-		if (dist(stay.x, stay.y, enemy.x, enemy.y) < threatenR(stay, enemy) ||
-			dist(rush.x, rush.y, enemy.x, enemy.y) < threatenR(rush, enemy)) {
+		if ((enemy.r * LAM > stay.r && dist(stay.x, stay.y, enemy.x, enemy.y) < threatenR(stay, enemy)) ||
+			(enemy.r * LAM > rush.r && dist(rush.x, rush.y, enemy.x, enemy.y) < threatenR(rush, enemy))) {
 			cout << "div not safe" << endl;
 
 			bothAreSafe = false;
@@ -495,6 +505,31 @@ void player_ai(Info& info)
 				info.myCommandList.addCommand(Division, curCell.id, direction);
 				cell_num++;
 				continue;
+			} else if (info.round < PREY_ROUND && curCell.r > DIV_FOR_NUT_MINR) {
+				//考虑分裂吃营养，只在前300回合并且r大于10
+				double maxNutR = 0;
+				int tarNutIdx = -1;
+				for (int i = 0; i < info.nutrientInfo.size(); ++i) {
+					auto& nut = info.nutrientInfo[i];
+					if (div_eat_nut(info, curCell, nut) && nut.nur > maxNutR &&
+						div_safe(info, curCell, nut.nux, nut.nuy, nut.nur)) {
+						div = true;
+						tarIdx = i;
+						maxEatR = nut.nur;
+                	    cout<<"divide Eat nut\n";
+					}
+				}
+				if (div) {
+					cout << "div eat nut" << endl;
+					auto& nut = info.nutrientInfo[tarNutIdx];
+
+					double dx = nut.nux - curCell.x;
+					double dy = nut.nuy - curCell.y;
+					int direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
+					info.myCommandList.addCommand(Division, curCell.id, direction);
+					cell_num++;
+					continue;
+				}
 			}
 		}
 
