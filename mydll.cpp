@@ -432,10 +432,12 @@ bool div_safe(Info& info, CellInfo& me, double tx, double ty,
 	rush.r = sqrt(stay.r * stay.r + add_r * add_r);
 	bool bothAreSafe = true;
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
-		if (info.cellInfo[i].ownerid == myID) continue;
 		auto& enemy = info.cellInfo[i];
-		if (dist(stay.x, stay.y, enemy.x, enemy.y) < threatenR(stay, enemy) + brakeLen(stay) ||
-			dist(rush.x, rush.y, enemy.x, enemy.y) < threatenR(rush, enemy) + brakeLen(rush)) {
+		if (enemy.ownerid == myID) continue;
+		if (stay.r / enemy.r >= LAM) continue;
+		if (dist(stay.x, stay.y, enemy.x, enemy.y) < threatenR(stay, enemy) ||
+			dist(rush.x, rush.y, enemy.x, enemy.y) < threatenR(rush, enemy)) {
+			cout << "div not safe" << endl;
 			bothAreSafe = false;
 			break;
 		}
@@ -482,6 +484,7 @@ void player_ai(Info& info)
 				}
 			}
 			if (div) {
+				cout << "div eat" << endl;
 				auto& cell = info.cellInfo[tarIdx];
 
 				double dx = cell.x - curCell.x;
