@@ -239,11 +239,13 @@ struct status {
 				//h += gain_cell_run(cell, enemy);
 				double gain = gain_cell_run(cell, enemy);
 				if (gain < 0) safe = false;
-				score += gain;
+				threatenh += gain_cell_run(cell, enemy);
+				//score += gain;
 				//++count;
 			}
 		}
 		if (count) h /= count;
+		h += threatenh;
 
         if(fa != -1 && all_status[fa].safe && !safe){//进入危险
             score -= 10000;
