@@ -95,7 +95,7 @@ bool eat_cell(CellInfo& cell, CellInfo& target) {
 
 
 struct status;
-double factor[8] = { 0,1,0.9,0.81,0.729,0.6561,0.59049,0.531441};
+double factor[8] = { 0,1,0.9,0.81,0.729,0.6561,0.59049,0.531441 };
 struct status {
 	//A*搜索过程中的一个状态
 	double x;
@@ -110,9 +110,9 @@ struct status {
 	double k = 1.0;//奖励衰减因子
 	double h = 0;//估价值
 	bool end = false;//为true的时候不再拓展
-    bool safe = true;//是否安全
+	bool safe = true;//是否安全
 	double ave_score = 0;
-	
+
 	status(double _x, double _y, double _r, double _v, int _d, int _step = 0) :x(_x), y(_y), r(_r), v(_v), d(_d), step(_step) {
 
 	}
@@ -170,22 +170,22 @@ struct status {
 		return t;
 	}
 
-    void checkSafe(vector<CellInfo>& cell_info){
-        CellInfo cell;
-        cell.x = x;
-        cell.y = y;
-        cell.r = r;
-        cell.v = v;
-        cell.d = d;
-        safe = true;
-        for(auto& enemy : cell_info) {
-            if (enemy.ownerid == myID) continue;
-            if (cell.r / enemy.r < LAM && gain_cell_run(cell, enemy) < 0){
-                safe = false;
-                return;
-            }
-        }
-    }
+	void checkSafe(vector<CellInfo>& cell_info) {
+		CellInfo cell;
+		cell.x = x;
+		cell.y = y;
+		cell.r = r;
+		cell.v = v;
+		cell.d = d;
+		safe = true;
+		for (auto& enemy : cell_info) {
+			if (enemy.ownerid == myID) continue;
+			if (cell.r / enemy.r < LAM && gain_cell_run(cell, enemy) < 0) {
+				safe = false;
+				return;
+			}
+		}
+	}
 
 	void update_score(vector<NutrientInfo>& nut_info, vector<CellInfo>& cell_info, vector<status>& all_status) {
 		CellInfo cell;
@@ -194,7 +194,7 @@ struct status {
 		cell.r = r;
 		cell.v = v;
 		cell.d = d;
-        //checkSafe(cell_info);
+		//checkSafe(cell_info);
 		//先对细胞进行判断，因为有可能发现不安全，直接return，可以省时间
 		for (auto& enemy : cell_info) {
 			if (enemy.ownerid == myID) continue;
@@ -244,6 +244,7 @@ struct status {
 			}
 		}
 		if (count) h /= count;
+
         if(fa != -1 && all_status[fa].safe && !safe){//进入危险
             score -= 10000;
         }
@@ -320,7 +321,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	priority_queue<status>q;
 	vector<status>all_status;
 
-    s0.checkSafe(newcellinfo);
+	s0.checkSafe(newcellinfo);
 	//s0.update_score(newnutinfo, newcellinfo, all_status);
 	all_status.push_back(s0);
 
@@ -377,7 +378,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	*/
 	//cout << "before while:best_status_num/all_status.size():" << best_status_num << "/" << all_status.size() << endl;
 	while (best_status_num != 0) {
-
+		//cout << all_status[best_status_num].score << "/" << all_status[best_status_num].h << endl;
 		best_dir = all_status[best_status_num].d;
 		best_status_num = all_status[best_status_num].fa;
 
