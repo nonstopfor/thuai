@@ -311,6 +311,10 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 			fmin(fabs(nut.nux), fabs(BFSIZE - nut.nux)) <= s0.r * t ||//地图卡边
 			fmin(fabs(nut.nuy), fabs(BFSIZE - nut.nuy)) <= s0.r * t)
 			continue;
+		if (info.round > 800 && dist(nut.nux, nut.nuy, 150, 150) > info.firenetInfo[0].er) {
+			//有火网时不吃在火网外的营养
+			continue;
+		}
 		newnutinfo.push_back(nut);
 	}
 	if (newnutinfo.size() == 0) newnutinfo.push_back(mostCloseNut);
@@ -436,6 +440,7 @@ bool div_safe(Info& info, CellInfo& me, double tx, double ty,
 void player_ai(Info& info)
 {
 	double start_time = clock();
+	cout << info.firenetInfo.size() << endl;
 	cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
 
 	vector<CellInfo> myCell;
@@ -481,43 +486,10 @@ void player_ai(Info& info)
 				continue;
 			}
 		}
-		/*
-		if (cell_num < 6) {
-			bool div_eat = false;
-			int div_select = -1;
-			double max_r = 0.0;
-			for (int i = 0; i < info.cellInfo.size(); ++i) {
-				auto& cell = info.cellInfo[i];
-				if (cell.ownerid == myID) continue;
-				if (cell.invincibleround) continue;
-				if (cell.r / (curCell.r / (sqrt(2.0))) >= LAM) continue;
-				double d = distCell(curCell, cell);
-				if (d < (1.2 + (2.0 / 3)) * curCell.r / sqrt(2.0)) {
-					if (cell.r > max_r) {
-						max_r = cell.r;
-						div_select = i;
-						div_eat = true;
-					}
-
-				}
-			}
-			if (div_eat) {
-				auto& cell = info.cellInfo[div_select];
-
-				double dx = cell.x - curCell.x;
-				double dy = cell.y - curCell.y;
-				int direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
-				info.myCommandList.addCommand(Division, curCell.id, direction);
-				cell_num++;
-				continue;
-
-			}
-		}
-		*/
 
 		status s0(curCell.x, curCell.y, curCell.r, curCell.v, curCell.d);
 		double tmp_start_time = clock();
-		double max_time = 140.0 / cell_num;
+		double max_time = 140.0 / myCell.size();
 		int dir = get_best_move_dir(s0, info, tmp_start_time, max_time);
 		info.myCommandList.addCommand(Move, curCell.id, dir);
 
