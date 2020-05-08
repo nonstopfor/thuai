@@ -187,7 +187,7 @@ struct status {
 		}
 	}
 
-	void update_score(vector<NutrientInfo>& nut_info, vector<CellInfo>& cell_info, vector<status>& all_status) {
+	void update_score(vector<NutrientInfo>& nut_info, vector<CellInfo>& cell_info, vector<status>& all_status, Info& info) {
 		CellInfo cell;
 		cell.x = x;
 		cell.y = y;
@@ -239,7 +239,7 @@ struct status {
 				//h += gain_cell_run(cell, enemy);
 				double gain = gain_cell_run(cell, enemy);
 				if (gain < 0) safe = false;
-				threatenh += gain_cell_run(cell, enemy);
+				threatenh += gain;
 				//score += gain;
 				//++count;
 			}
@@ -333,7 +333,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	vector<int>dirs = get_dirs(s0, s0, info);
 	for (auto& dir : dirs) {
 		status w = s0.move(dir);
-		w.update_score(newnutinfo, newcellinfo, all_status);
+		w.update_score(newnutinfo, newcellinfo, all_status, info);
 		w.num = size;
 
 		q.push(w);
@@ -345,12 +345,12 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	int max_step = 0;
 	//map<int, int>cnt;
 	while (!q.empty()) {
-		++times;
+		//++times;
 		status st = q.top(); q.pop();
 		//cout << "step/score/h/ave_score:" << st.step << "/" << st.score << "/" << st.h << "/" << st.get_ave_score() << endl;
 
 		//cnt[st.get_root(all_status)]++;
-		max_step = max(max_step, st.step);
+		//max_step = max(max_step, st.step);
 		//double score = st.get_dist_score(s0);
 		//double score = st.ave_score;
 		double score = st.get_sum_score();
@@ -365,7 +365,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 		vector<int>tmp_dirs = get_dirs(s0, st, info);
 		for (auto& dir : tmp_dirs) {
 			status w = st.move(dir);
-			w.update_score(newnutinfo, newcellinfo, all_status);
+			w.update_score(newnutinfo, newcellinfo, all_status, info);
 			w.num = size;
 
 			q.push(w);
@@ -389,7 +389,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 
 	}
 	//cout << "best_dir:" << best_dir << endl;
-	cout << "max step:" << max_step << endl;
+	//cout << "max step:" << max_step << endl;
 	return best_dir;
 }
 
