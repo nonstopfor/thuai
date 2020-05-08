@@ -313,7 +313,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 			fmin(fabs(nut.nux), fabs(BFSIZE - nut.nux)) <= s0.r * t ||//地图卡边
 			fmin(fabs(nut.nuy), fabs(BFSIZE - nut.nuy)) <= s0.r * t)
 			continue;
-		if (info.round > 800 && dist(nut.nux, nut.nuy, 150, 150) > info.firenetInfo[0].er) {
+		if (info.round >= 800 && dist(nut.nux, nut.nuy, 150, 150) > info.firenetInfo[0].er) {
 			//有火网时不吃在火网外的营养
 			continue;
 		}
@@ -326,6 +326,10 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 		double t = 1 - sqrt(2) / 3;
 		if (min(abs(cell.x), abs(N - cell.x)) <= s0.r * t) continue;
 		if (min(abs(cell.y), abs(N - cell.y)) <= s0.r * t) continue;
+		if (info.round >= 800 && dist(cell.x, cell.y, 150, 150) > info.firenetInfo[0].er) {
+			//有火网时不吃在火网外的营养
+			continue;
+		}
 		newcellinfo.push_back(cell);
 	}
 
@@ -442,7 +446,7 @@ bool div_safe(Info& info, CellInfo& me, double tx, double ty,
 void player_ai(Info& info)
 {
 	double start_time = clock();
-	cout << info.firenetInfo.size() << endl;
+	//cout << info.firenetInfo.size() << endl;
 	cout << "round: " << info.round << " my score and rank: " << info.playerInfo.score << " " << info.playerInfo.rank << endl;
 
 	vector<CellInfo> myCell;
