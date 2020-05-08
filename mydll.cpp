@@ -117,7 +117,7 @@ struct status {
 
 	}
 	double get_ave_score() const {
-		//return score + h;
+		return score + h;
 		//return (score + h) / step;
 		if (score + h > 0) return (score + h) * factor[step];
 		else return (score + h) / factor[step];
