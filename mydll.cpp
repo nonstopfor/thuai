@@ -199,9 +199,10 @@ struct status {
 		for (auto& enemy : cell_info) {
 			if (enemy.ownerid == myID) continue;
 			if (eat_cell(cell, enemy)) {
-				score += (PI * enemy.r * enemy.r + 500) / step;
-				cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
-				end = true;
+				if (info.round > 300 || step == 1) {
+					score += (PI * enemy.r * enemy.r + 500) / step;
+					cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
+					end = true;
 			}
 			else if (eat_cell(enemy, cell)) {
 				score = -MAX_SCORE;
