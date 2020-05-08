@@ -320,8 +320,8 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	priority_queue<status>q;
 	vector<status>all_status;
 
-    //s0.checkSafe(newcellinfo);
-	s0.update_score(newnutinfo, newcellinfo, all_status);
+    s0.checkSafe(newcellinfo);
+	//s0.update_score(newnutinfo, newcellinfo, all_status);
 	all_status.push_back(s0);
 
 	vector<int>dirs = get_dirs(s0, s0, info);
