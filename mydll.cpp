@@ -530,11 +530,11 @@ void player_ai(Info& info)
 						div = true;
 						tarIdx = i;
 						maxEatR = nut.nur;
-						cout << "divide Eat nut\n";
+						//cout << "divide Eat nut\n";
 					}
 				}
 				if (div) {
-					cout << "div eat nut" << endl;
+					//cout << "div eat nut" << endl;
 					auto& nut = info.nutrientInfo[tarNutIdx];
 
 					double dx = nut.nux - curCell.x;
