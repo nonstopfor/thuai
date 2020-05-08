@@ -95,7 +95,7 @@ bool eat_cell(CellInfo& cell, CellInfo& target) {
 
 
 struct status;
-
+double factor[8] = { 0,1,0.9,0.81,0.729,0.6561,0.59049,0.531441};
 struct status {
 	//A*搜索过程中的一个状态
 	double x;
@@ -111,16 +111,22 @@ struct status {
 	double h = 0;//估价值
 	bool end = false;//为true的时候不再拓展
 	double ave_score = 0;
+	
 	status(double _x, double _y, double _r, double _v, int _d, int _step = 0) :x(_x), y(_y), r(_r), v(_v), d(_d), step(_step) {
 
 	}
 	double get_ave_score() const {
-		return score + h;
+		//return score + h;
 		//return (score + h) / step;
+		if (score + h > 0) return (score + h) * factor[step];
+		else return (score + h) / factor[step];
 	}
 	double get_dist_score(status s0) {
 		double dis = dist(x, y, s0.x, s0.y);
 		return (score + h) / dis;
+	}
+	double get_sum_score() {
+		return score + h;
 	}
 	bool operator<(const status& t) const {
 		return ave_score < t.ave_score;
@@ -159,6 +165,7 @@ struct status {
 		else if (t.y > N - t.r) t.y = N - t.r;
 		t.step++;
 		t.fa = num;
+		t.h = 0;//g继承父节点的，h另外算
 		return t;
 	}
 
@@ -194,6 +201,7 @@ struct status {
 
 		//估计h值
 		int count = 0;
+		double threatenh = 0;
 		for (auto& nut : nut_info) {
 			if (nut.nur >= r) continue;
 			h += gain_nut(cell, nut);
@@ -209,8 +217,8 @@ struct status {
 			}
 			else if (r / enemy.r < LAM) {
 				//威胁算在g里面
-				score += gain_cell_run(cell, enemy);
-				//++count;
+				h += gain_cell_run(cell, enemy);
+				++count;
 			}
 		}
 		if (count) h /= count;
@@ -298,16 +306,17 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	double max_score = -1e10;
 	int best_status_num = 0;
 	int max_step = 0;
-	map<int, int>cnt;
+	//map<int, int>cnt;
 	while (!q.empty()) {
 		++times;
 		status st = q.top(); q.pop();
 		//cout << "step/score/h/ave_score:" << st.step << "/" << st.score << "/" << st.h << "/" << st.get_ave_score() << endl;
 
-		cnt[st.get_root(all_status)]++;
+		//cnt[st.get_root(all_status)]++;
 		max_step = max(max_step, st.step);
 		//double score = st.get_dist_score(s0);
-		double score = st.ave_score;
+		//double score = st.ave_score;
+		double score = st.get_sum_score();
 		if (score > max_score) {
 			max_score = score;
 			best_status_num = st.num;
@@ -329,12 +338,12 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 
 	}
 	int best_dir = 0;
-	
+	/*
 	for (int i = 1; i <= 48; ++i) {
 		cout << i << ":" << cnt[i] << endl;
 		//cout << "score/h/ave_score:" << all_status[i].score << "/" << all_status[i].h << "/" << all_status[i].get_ave_score() << endl;
 	}
-	
+	*/
 	//cout << "before while:best_status_num/all_status.size():" << best_status_num << "/" << all_status.size() << endl;
 	while (best_status_num != 0) {
 
