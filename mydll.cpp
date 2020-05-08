@@ -16,7 +16,7 @@ using namespace std;
 #define LAM 0.9
 #define N 300
 #define MAX_SCORE 1e10
-#define PREY_ROUND 300
+#define PREY_ROUND 250
 #define DIV_FOR_NUT_MINR 10
 TPlayerID myID;
 /*
@@ -169,6 +169,7 @@ struct status {
 		t.step++;
 		t.fa = num;
 		t.h = 0;//g继承父节点的，h另外算
+		if (abs(t.x - x) < 0.01 && abs(t.y - y) < 0.01) t.end = true;
 		return t;
 	}
 
@@ -221,6 +222,9 @@ struct status {
 					end = true;
 				}
 			}
+			if (info.round >= 800 && dist(x, y, 150, 150) > info.firenetInfo[0].er) {
+				score -= 0.04 * PI * r * r;
+			}
 
 			//估计h值
 			int count = 0;
@@ -235,7 +239,7 @@ struct status {
 			for (auto& enemy : cell_info) {
 				if (info.round < 800 && enemy.ownerid == myID) continue;
 				if (info.round >= 800 && enemy.ownerid == myID) {
-					friendh += PI * enemy.r * enemy.r / max(0.01, distCell(cell, enemy, true));
+					friendh += 100000 * PI * enemy.r * enemy.r / max(0.01, distCell(cell, enemy) - max(cell.r, enemy.r) * 2.0 / 3);
 					++friendcount;
 				}
 				if (enemy.r / r >= LAM && r / enemy.r >= LAM) continue;
@@ -514,7 +518,8 @@ void player_ai(Info& info)
 				info.myCommandList.addCommand(Division, curCell.id, direction);
 				cell_num++;
 				continue;
-			} else if (info.round < PREY_ROUND && curCell.r > DIV_FOR_NUT_MINR) {
+			}
+			else if (info.round < PREY_ROUND && curCell.r > DIV_FOR_NUT_MINR) {
 				//考虑分裂吃营养，只在前300回合并且r大于10
 				double maxNutR = 0;
 				int tarNutIdx = -1;
@@ -525,7 +530,7 @@ void player_ai(Info& info)
 						div = true;
 						tarIdx = i;
 						maxEatR = nut.nur;
-                	    cout<<"divide Eat nut\n";
+						cout << "divide Eat nut\n";
 					}
 				}
 				if (div) {
