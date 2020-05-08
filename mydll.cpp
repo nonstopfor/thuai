@@ -40,24 +40,6 @@ double maxSpeed(CellInfo& cell) {
 double accelerate(CellInfo& cell) {
 	return 10.0 / cell.r;
 }
-double gain_nut(CellInfo& me, NutrientInfo& nut) {
-	double u = dist(me.x, me.y, nut.nux, nut.nuy) - 2 * me.r / 3;
-	double gain = PI * nut.nur * nut.nur * maxSpeed(me) / u;
-	return gain;
-}
-double gain_cell_eat(CellInfo& me, CellInfo& enemy) {
-	//吃对方
-	double u = dist(me.x, me.y, enemy.x, enemy.y) - 2 * me.r / 3;
-	double gain = (PI * enemy.r * enemy.r + 500) * maxSpeed(me) / u;
-	return gain;
-}
-double gain_cell_run(CellInfo& me, CellInfo& enemy) {
-	//逃跑
-	double u = dist(me.x, me.y, enemy.x, enemy.y) - 2 * enemy.r / 3;
-	double gain = (PI * me.r * me.r + 500) * 2 * 5 * 10 * 10 * (maxSpeed(me) + maxSpeed(enemy)) / u;
-	return -gain;
-}
-
 double brakeLen(CellInfo& cell) {
 	double maxSpd = maxSpeed(cell),
 		acc = accelerate(cell);
@@ -77,6 +59,29 @@ int point_dir(double x1, double y1, double x2, double y2) {
 	int dir = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
 	return dir;
 }
+double gain_nut(CellInfo& me, NutrientInfo& nut) {
+	double u = dist(me.x, me.y, nut.nux, nut.nuy) - 2 * me.r / 3;
+	double gain = PI * nut.nur * nut.nur * maxSpeed(me) / u;
+	return gain;
+}
+double gain_cell_eat(CellInfo& me, CellInfo& enemy) {
+	//吃对方
+	double u = dist(me.x, me.y, enemy.x, enemy.y) - 2 * me.r / 3;
+	double gain = (PI * enemy.r * enemy.r + 500) * maxSpeed(me) / u;
+	return gain;
+}
+double gain_cell_run(CellInfo& me, CellInfo& enemy) {
+	//逃跑
+	double u = dist(me.x, me.y, enemy.x, enemy.y);
+	double gain = 0;
+	if (u < threatenR(me, enemy) + brakeLen(me)) {
+		gain = (PI * me.r * me.r + 500) * 2 * 5 * 10 * 10 * (maxSpeed(me) + maxSpeed(enemy)) / u;
+	}
+	//double gain = (PI * me.r * me.r + 500) * 2 * 5 * 10 * 10 * (maxSpeed(me) + maxSpeed(enemy)) / u;
+	return -gain;
+}
+
+
 bool eat_nut(CellInfo& cell, NutrientInfo& nut) {
 	if (nut.nur >= cell.r) return false;
 	if (dist(cell.x, cell.y, nut.nux, nut.nuy) > 2 * cell.r / 3.0) return false;
@@ -102,17 +107,22 @@ struct status {
 	double score = 0;//相当于g
 	int fa = -1;//父亲在vector中的下标
 	int num = 0;//在vector中的下标
-	double k = 1.5;//奖励衰减因子
+	double k = 1.0;//奖励衰减因子
 	double h = 0;//估价值
 	bool end = false;//为true的时候不再拓展
+	double ave_score = 0;
 	status(double _x, double _y, double _r, double _v, int _d, int _step = 0) :x(_x), y(_y), r(_r), v(_v), d(_d), step(_step) {
 
 	}
 	double get_ave_score() const {
-		return (score + h) / step;
+		return (score + h) / exp(k * (step - 1));
+	}
+	double get_dist_score(status s0) {
+		double dis = dist(x, y, s0.x, s0.y);
+		return (score + h) / dis;
 	}
 	bool operator<(const status& t) const {
-		return get_ave_score() < t.get_ave_score();
+		return ave_score < t.ave_score;
 	}
 
 	int get_root(vector<status>& v) {
@@ -162,7 +172,7 @@ struct status {
 		for (auto& enemy : cell_info) {
 			if (enemy.ownerid == myID) continue;
 			if (eat_cell(cell, enemy)) {
-				score += (PI * enemy.r * enemy.r + 500) / exp(k * (step - 1));
+				score += (PI * enemy.r * enemy.r + 500);
 				cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
 				end = true;
 			}
@@ -175,7 +185,7 @@ struct status {
 
 		for (auto& nut : nut_info) {
 			if (eat_nut(cell, nut)) {
-				score += (PI * nut.nur * nut.nur) / exp(k * (step - 1));
+				score += (PI * nut.nur * nut.nur);
 				cell.r = sqrt(cell.r * cell.r + nut.nur * nut.nur);
 				end = true;
 			}
@@ -203,6 +213,7 @@ struct status {
 			}
 		}
 		if (count) h /= count;
+		ave_score = get_ave_score();
 	}
 };
 
@@ -283,20 +294,20 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 		all_status.push_back(w);
 		++size;
 	}
-	double max_ave_score = -1e10;
+	double max_score = -1e10;
 	int best_status_num = 0;
 	int max_step = 0;
-	map<int, int>cnt;
+	//map<int, int>cnt;
 	while (!q.empty()) {
 		++times;
 		status st = q.top(); q.pop();
 		//cout << "step/score/h/ave_score:" << st.step << "/" << st.score << "/" << st.h << "/" << st.get_ave_score() << endl;
 
-		cnt[st.get_root(all_status)]++;
+		//cnt[st.get_root(all_status)]++;
 		max_step = max(max_step, st.step);
-		double score = st.get_ave_score();
-		if (score > max_ave_score) {
-			max_ave_score = score;
+		double score = st.get_dist_score(s0);
+		if (score > max_score) {
+			max_score = score;
 			best_status_num = st.num;
 		}
 		double end_time = clock();
@@ -319,7 +330,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	/*
 	for (int i = 1; i <= 48; ++i) {
 		cout << i << ":" << cnt[i] << endl;
-		cout << "score/h/ave_score:" << all_status[i].score << "/" << all_status[i].h << "/" << all_status[i].get_ave_score() << endl;
+		//cout << "score/h/ave_score:" << all_status[i].score << "/" << all_status[i].h << "/" << all_status[i].get_ave_score() << endl;
 	}
 	*/
 	//cout << "before while:best_status_num/all_status.size():" << best_status_num << "/" << all_status.size() << endl;
