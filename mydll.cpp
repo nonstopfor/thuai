@@ -437,7 +437,7 @@ bool div_safe(Info& info, CellInfo& me, double tx, double ty,
 		if (stay.r / enemy.r >= LAM) continue;
 		if (dist(stay.x, stay.y, enemy.x, enemy.y) < threatenR(stay, enemy) ||
 			dist(rush.x, rush.y, enemy.x, enemy.y) < threatenR(rush, enemy)) {
-			cout << "div not safe" << endl;
+			//cout << "div not safe" << endl;
 
 			bothAreSafe = false;
 			break;
@@ -482,11 +482,11 @@ void player_ai(Info& info)
 					div = true;
 					tarIdx = i;
 					maxEatR = cell.r;
-                    cout<<"Eat\n";
+                    //cout<<"Eat\n";
 				}
 			}
 			if (div) {
-				cout << "div eat" << endl;
+				//cout << "div eat" << endl;
 				auto& cell = info.cellInfo[tarIdx];
 
 				double dx = cell.x - curCell.x;
