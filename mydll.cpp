@@ -247,12 +247,12 @@ struct status {
 		if (count) h /= count;
 		h += threatenh;
 
-        if(fa != -1 && all_status[fa].safe && !safe){//进入危险
-            score -= 10000;
-        }
-        if(fa != -1 && !all_status[fa].safe && safe){//离开危险
-            score += 7000; //进入过危险
-        }
+		if (fa != -1 && all_status[fa].safe && !safe) {//进入危险
+			score -= 10000;
+		}
+		if (fa != -1 && !all_status[fa].safe && safe) {//离开危险
+			score += 7000; //进入过危险
+		}
 		ave_score = get_ave_score();
 	}
 };
@@ -315,6 +315,9 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 
 	for (auto& cell : info.cellInfo) {
 		if (dist(cell.x, cell.y, s0.x, s0.y) > 10 * s0.r) continue;
+		double t = 1 - sqrt(2) / 3;
+		if (min(abs(cell.x), abs(N - cell.x)) <= s0.r * t) continue;
+		if (min(abs(cell.y), abs(N - cell.y)) <= s0.r * t) continue;
 		newcellinfo.push_back(cell);
 	}
 
@@ -401,7 +404,7 @@ bool div_eat(Info& info, CellInfo& myCell, CellInfo& enemy) {
 }
 
 bool div_safe(Info& info, CellInfo& me, double tx, double ty,
-		double add_r) {
+	double add_r) {
 	//add_r是被吃目标的半径
 	//判断向(tx,ty)位置分裂是否安全
 	double dx = tx - me.x;
@@ -414,7 +417,7 @@ bool div_safe(Info& info, CellInfo& me, double tx, double ty,
 	double rushRatio = 1.2 * stay.r / sqrt(dx * dx + dy * dy);//1.2是rush距离比新半径的倍数
 	rush.x = dx * rushRatio + stay.x;
 	rush.y = dy * rushRatio + stay.y;
-	rush.r = sqrt(stay.r*stay.r + add_r*add_r);
+	rush.r = sqrt(stay.r * stay.r + add_r * add_r);
 	bool bothAreSafe = true;
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		if (info.cellInfo[i].ownerid == myID) continue;
@@ -450,7 +453,7 @@ void player_ai(Info& info)
 		CellInfo& curCell = myCell[cur];
 		//先判断能否分裂直接吃细胞
 		//注意最大细胞数
-		if (cell_num < MAXCELLNUM && curCell.r > sqrt(2)*minR) {
+		if (cell_num < MAXCELLNUM && curCell.r > sqrt(2) * minR) {
 			bool div = false;
 			int direction = -1;
 			int tarIdx = -1;
