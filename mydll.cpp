@@ -232,8 +232,10 @@ struct status {
 				if (enemy.ownerid == myID) continue;
 				if (enemy.r / r >= LAM && r / enemy.r >= LAM) continue;
 				if (enemy.r / r < LAM) {
-					h += gain_cell_eat(cell, enemy);
-					++count;
+					if (info.round > 300) {
+						h += gain_cell_eat(cell, enemy);
+						++count;
+					}
 				}
 				else if (r / enemy.r < LAM) {
 					//威胁算在g里面
