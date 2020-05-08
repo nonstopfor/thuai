@@ -204,12 +204,12 @@ struct status {
 					cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
 					end = true;
 				}
-				else if (eat_cell(enemy, cell)) {
-					score = -MAX_SCORE;
-					end = true;
-					return;
-				}
-			}
+				
+			}else if (eat_cell(enemy, cell)) {
+                score = -MAX_SCORE;
+                end = true;
+                return;
+            }
 
 			for (auto& nut : nut_info) {
 				if (eat_nut(cell, nut)) {
@@ -426,8 +426,8 @@ bool div_safe(Info& info, CellInfo& me, double tx, double ty,
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		if (info.cellInfo[i].ownerid == myID) continue;
 		auto& enemy = info.cellInfo[i];
-		if (dist(stay.x, stay.y, enemy.x, enemy.y) < threatenR(stay, enemy) + brakeLen(stay) ||
-			dist(rush.x, rush.y, enemy.x, enemy.y) < threatenR(rush, enemy) + brakeLen(rush)) {
+		if (dist(stay.x, stay.y, enemy.x, enemy.y) < threatenR(stay, enemy) ||
+			dist(rush.x, rush.y, enemy.x, enemy.y) < threatenR(rush, enemy)) {
 			bothAreSafe = false;
 			break;
 		}
@@ -470,6 +470,7 @@ void player_ai(Info& info)
 					div = true;
 					tarIdx = i;
 					maxEatR = cell.r;
+                    cout<<"Eat\n";
 				}
 			}
 			if (div) {
