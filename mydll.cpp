@@ -204,12 +204,13 @@ struct status {
 					cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
 					end = true;
 				}
-				
-			}else if (eat_cell(enemy, cell)) {
-                score = -MAX_SCORE;
-                end = true;
-                return;
-            }
+
+			}
+			else if (eat_cell(enemy, cell)) {
+				score = -MAX_SCORE;
+				end = true;
+				return;
+			}
 
 			for (auto& nut : nut_info) {
 				if (eat_nut(cell, nut)) {
@@ -227,9 +228,14 @@ struct status {
 				h += gain_nut(cell, nut);
 				++count;
 			}
-
+			double friendh = 0;
+			int friendcount = 0;
 			for (auto& enemy : cell_info) {
-				if (enemy.ownerid == myID) continue;
+				if (info.round < 800 && enemy.ownerid == myID) continue;
+				if (info.round >= 800 && enemy.ownerid == myID) {
+					friendh += PI * enemy.r * enemy.r / max(0.01, distCell(cell, enemy, true));
+					++friendcount;
+				}
 				if (enemy.r / r >= LAM && r / enemy.r >= LAM) continue;
 				if (enemy.r / r < LAM) {
 					if (info.round > 300) {
@@ -248,7 +254,9 @@ struct status {
 				}
 			}
 			if (count) h /= count;
+			//if (friendcount) friendh /= friendcount;
 			h += threatenh;
+			h += friendh;
 
 			if (fa != -1 && all_status[fa].safe && !safe) {//进入危险
 				score -= 10000;
@@ -482,7 +490,7 @@ void player_ai(Info& info)
 					div = true;
 					tarIdx = i;
 					maxEatR = cell.r;
-                    //cout<<"Eat\n";
+					//cout<<"Eat\n";
 				}
 			}
 			if (div) {
