@@ -60,13 +60,13 @@ int point_dir(double x1, double y1, double x2, double y2) {
 	return dir;
 }
 double gain_nut(CellInfo& me, NutrientInfo& nut) {
-	double u = max(0.001, dist(me.x, me.y, nut.nux, nut.nuy) - 2 * me.r / 3);
+	double u = max(0.1, dist(me.x, me.y, nut.nux, nut.nuy) - 2 * me.r / 3);
 	double gain = PI * nut.nur * nut.nur * maxSpeed(me) / u;
 	return gain;
 }
 double gain_cell_eat(CellInfo& me, CellInfo& enemy) {
 	//吃对方
-	double u = max(0.001, dist(me.x, me.y, enemy.x, enemy.y) - 2 * me.r / 3);
+	double u = max(0.1, dist(me.x, me.y, enemy.x, enemy.y) - 2 * me.r / 3);
 	double gain = (PI * enemy.r * enemy.r + 500) * maxSpeed(me) / u;
 	return gain;
 }
@@ -199,7 +199,7 @@ struct status {
 		for (auto& enemy : cell_info) {
 			if (enemy.ownerid == myID) continue;
 			if (eat_cell(cell, enemy)) {
-				score += (PI * enemy.r * enemy.r + 500);
+				score += (PI * enemy.r * enemy.r + 500) / step;
 				cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
 				end = true;
 			}
@@ -212,7 +212,7 @@ struct status {
 
 		for (auto& nut : nut_info) {
 			if (eat_nut(cell, nut)) {
-				score += (PI * nut.nur * nut.nur);
+				score += (PI * nut.nur * nut.nur) / step;
 				cell.r = sqrt(cell.r * cell.r + nut.nur * nut.nur);
 				end = true;
 			}
