@@ -244,12 +244,14 @@ struct status {
 			}
 		}
 		if (count) h /= count;
-		if (fa != -1 && all_status[fa].safe && !safe) {//进入危险
-			score -= 10000;
-		}
-		if (fa != -1 && !all_status[fa].safe && safe) {//离开危险
-			score += 7000; //进入过危险
-		}
+
+        if(fa != -1 && all_status[fa].safe && !safe){//进入危险
+            score -= 10000;
+        }
+        if(fa != -1 && !all_status[fa].safe && safe){//离开危险
+            score += 7000; //进入过危险
+        }
+		score /= 2;
 		ave_score = get_ave_score();
 	}
 };
