@@ -390,6 +390,44 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	return best_dir;
 }
 
+bool div_eat(Info& info, CellInfo& myCell, CellInfo& enemy) {
+	bool div_eat = false;
+	if (enemy.invincibleround) return false;
+	if (enemy.r / (myCell.r / (sqrt(2.0))) >= LAM) return false;
+	double d = distCell(myCell, enemy);
+	if (d < (1.2 + (2.0 / 3)) * myCell.r / sqrt(2.0))
+		div_eat = true;
+	return div_eat;
+}
+
+bool div_safe(Info& info, CellInfo& me, double tx, double ty,
+		double add_r) {
+	//add_r是被吃目标的半径
+	//判断向(tx,ty)位置分裂是否安全
+	double dx = tx - me.x;
+	double dy = ty - me.y;
+	TPlayerID myID = info.myID;
+
+	//接着判断是否分裂后仍然安全
+	CellInfo stay, rush;    //分裂出的两个细胞
+	stay.x = me.x; stay.y = me.y; stay.r = me.r / sqrt(2);
+	double rushRatio = 1.2 * stay.r / sqrt(dx * dx + dy * dy);//1.2是rush距离比新半径的倍数
+	rush.x = dx * rushRatio + stay.x;
+	rush.y = dy * rushRatio + stay.y;
+	rush.r = sqrt(stay.r*stay.r + add_r*add_r);
+	bool bothAreSafe = true;
+	for (int i = 0; i < info.cellInfo.size(); ++i) {
+		if (info.cellInfo[i].ownerid == myID) continue;
+		auto& enemy = info.cellInfo[i];
+		if (dist(stay.x, stay.y, enemy.x, enemy.y) < threatenR(stay, enemy) + brakeLen(stay) ||
+			dist(rush.x, rush.y, enemy.x, enemy.y) < threatenR(rush, enemy) + brakeLen(rush)) {
+			bothAreSafe = false;
+			break;
+		}
+	}
+	return bothAreSafe;
+}
+
 void player_ai(Info& info)
 {
 	double start_time = clock();
@@ -411,6 +449,33 @@ void player_ai(Info& info)
 		times = 0;
 		CellInfo& curCell = myCell[cur];
 		//先判断能否分裂直接吃细胞
+		//注意最大细胞数
+		if (cell_num < MAXCELLNUM && curCell.r > sqrt(2)*minR) {
+			bool div = false;
+			int direction = -1;
+			int tarIdx = -1;
+			double maxEatR = 0;
+			for (int i = 0; i < info.cellInfo.size(); ++i) {
+				auto& cell = info.cellInfo[i];
+				if (cell.ownerid == info.myID) continue;
+				if (div_eat(info, curCell, cell) && cell.r > maxEatR &&
+					div_safe(info, curCell, cell.x, cell.y, cell.r)) {
+					div = true;
+					tarIdx = i;
+					maxEatR = cell.r;
+				}
+			}
+			if (div) {
+				auto& cell = info.cellInfo[tarIdx];
+
+				double dx = cell.x - curCell.x;
+				double dy = cell.y - curCell.y;
+				int direction = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
+				info.myCommandList.addCommand(Division, curCell.id, direction);
+				cell_num++;
+				continue;
+			}
+		}
 		/*
 		if (cell_num < 6) {
 			bool div_eat = false;
