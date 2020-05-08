@@ -187,7 +187,7 @@ struct status {
 		}
 	}
 
-	void update_score(vector<NutrientInfo>& nut_info, vector<CellInfo>& cell_info, vector<status>& all_status) {
+	void update_score(vector<NutrientInfo>& nut_info, vector<CellInfo>& cell_info, vector<status>& all_status, Info& info) {
 		CellInfo cell;
 		cell.x = x;
 		cell.y = y;
@@ -199,9 +199,10 @@ struct status {
 		for (auto& enemy : cell_info) {
 			if (enemy.ownerid == myID) continue;
 			if (eat_cell(cell, enemy)) {
-				score += (PI * enemy.r * enemy.r + 500) / step;
-				cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
-				end = true;
+				if (info.round > 300 || step == 1) {
+					score += (PI * enemy.r * enemy.r + 500) / step;
+					cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
+					end = true;
 			}
 			else if (eat_cell(enemy, cell)) {
 				score = -MAX_SCORE;
@@ -333,7 +334,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	vector<int>dirs = get_dirs(s0, s0, info);
 	for (auto& dir : dirs) {
 		status w = s0.move(dir);
-		w.update_score(newnutinfo, newcellinfo, all_status);
+		w.update_score(newnutinfo, newcellinfo, all_status, info);
 		w.num = size;
 
 		q.push(w);
@@ -365,7 +366,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 		vector<int>tmp_dirs = get_dirs(s0, st, info);
 		for (auto& dir : tmp_dirs) {
 			status w = st.move(dir);
-			w.update_score(newnutinfo, newcellinfo, all_status);
+			w.update_score(newnutinfo, newcellinfo, all_status, info);
 			w.num = size;
 
 			q.push(w);
