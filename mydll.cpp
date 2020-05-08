@@ -314,7 +314,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	if (newnutinfo.size() == 0) newnutinfo.push_back(mostCloseNut);
 
 	for (auto& cell : info.cellInfo) {
-		if (dist(cell.x, cell.y, s0.x, s0.y > 10 * s0.r)) continue;
+		if (dist(cell.x, cell.y, s0.x, s0.y) > 10 * s0.r) continue;
 		newcellinfo.push_back(cell);
 	}
 
