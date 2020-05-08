@@ -203,61 +203,62 @@ struct status {
 					score += (PI * enemy.r * enemy.r + 500) / step;
 					cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
 					end = true;
+				}
+				else if (eat_cell(enemy, cell)) {
+					score = -MAX_SCORE;
+					end = true;
+					return;
+				}
 			}
-			else if (eat_cell(enemy, cell)) {
-				score = -MAX_SCORE;
-				end = true;
-				return;
+
+			for (auto& nut : nut_info) {
+				if (eat_nut(cell, nut)) {
+					score += (PI * nut.nur * nut.nur) / step;
+					cell.r = sqrt(cell.r * cell.r + nut.nur * nut.nur);
+					end = true;
+				}
 			}
-		}
 
-		for (auto& nut : nut_info) {
-			if (eat_nut(cell, nut)) {
-				score += (PI * nut.nur * nut.nur) / step;
-				cell.r = sqrt(cell.r * cell.r + nut.nur * nut.nur);
-				end = true;
-			}
-		}
-
-		//估计h值
-		int count = 0;
-		double threatenh = 0;
-		for (auto& nut : nut_info) {
-			if (nut.nur >= r) continue;
-			h += gain_nut(cell, nut);
-			++count;
-		}
-
-		for (auto& enemy : cell_info) {
-			if (enemy.ownerid == myID) continue;
-			if (enemy.r / r >= LAM && r / enemy.r >= LAM) continue;
-			if (enemy.r / r < LAM) {
-				h += gain_cell_eat(cell, enemy);
+			//估计h值
+			int count = 0;
+			double threatenh = 0;
+			for (auto& nut : nut_info) {
+				if (nut.nur >= r) continue;
+				h += gain_nut(cell, nut);
 				++count;
 			}
-			else if (r / enemy.r < LAM) {
-				//威胁算在g里面
-				//h += gain_cell_run(cell, enemy);
-				double gain = gain_cell_run(cell, enemy);
-				if (gain < 0) safe = false;
-				threatenh += gain;
-				//score += gain;
-				//++count;
+
+			for (auto& enemy : cell_info) {
+				if (enemy.ownerid == myID) continue;
+				if (enemy.r / r >= LAM && r / enemy.r >= LAM) continue;
+				if (enemy.r / r < LAM) {
+					h += gain_cell_eat(cell, enemy);
+					++count;
+				}
+				else if (r / enemy.r < LAM) {
+					//威胁算在g里面
+					//h += gain_cell_run(cell, enemy);
+					double gain = gain_cell_run(cell, enemy);
+					if (gain < 0) safe = false;
+					threatenh += gain;
+					//score += gain;
+					//++count;
+				}
 			}
-		}
-		if (count) h /= count;
-		h += threatenh;
+			if (count) h /= count;
+			h += threatenh;
 
-		if (fa != -1 && all_status[fa].safe && !safe) {//进入危险
-			score -= 10000;
+			if (fa != -1 && all_status[fa].safe && !safe) {//进入危险
+				score -= 10000;
+			}
+			if (fa != -1 && !all_status[fa].safe && safe) {//离开危险
+				score += 7000; //进入过危险
+			}
+			ave_score = get_ave_score();
 		}
-		if (fa != -1 && !all_status[fa].safe && safe) {//离开危险
-			score += 7000; //进入过危险
-		}
-		ave_score = get_ave_score();
-	}
+	};
+
 };
-
 vector<int>get_dirs(status s0, status st, Info& info) {
 	vector<int>dirs;
 	//离当前方向较近的更密
