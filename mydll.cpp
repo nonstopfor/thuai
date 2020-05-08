@@ -209,7 +209,8 @@ struct status {
 vector<int>get_dirs(status s0, status st, Info& info) {
 	vector<int>dirs;
 	//离当前方向较近的更密
-	int d = point_dir(s0.x, s0.y, st.x, st.y);
+
+	int d = st.step >= 1 ? point_dir(s0.x, s0.y, st.x, st.y) : s0.d;
 	for (int i = 0; i < 60; i += 5) {
 		dirs.push_back((i + d) % 360);
 		dirs.push_back((d - i + 360) % 360);
