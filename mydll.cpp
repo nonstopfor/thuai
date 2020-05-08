@@ -528,7 +528,7 @@ void player_ai(Info& info)
 					if (div_eat_nut(info, curCell, nut) && nut.nur > maxNutR &&
 						div_safe(info, curCell, nut.nux, nut.nuy, nut.nur)) {
 						div = true;
-						tarIdx = i;
+						tarNutIdx = i;
 						maxEatR = nut.nur;
 						//cout << "divide Eat nut\n";
 					}
