@@ -194,7 +194,7 @@ struct status {
 		cell.r = r;
 		cell.v = v;
 		cell.d = d;
-        checkSafe(cell_info);
+        //checkSafe(cell_info);
 		//先对细胞进行判断，因为有可能发现不安全，直接return，可以省时间
 		for (auto& enemy : cell_info) {
 			if (enemy.ownerid == myID) continue;
@@ -209,12 +209,6 @@ struct status {
 				return;
 			}
 		}
-        if(fa != -1 && all_status[fa].safe && !safe){//进入危险
-            score -= 10000;
-        }
-        if(fa != -1 && !all_status[fa].safe && safe){//离开危险
-            score += 7000; //进入过危险
-        }
 
 		for (auto& nut : nut_info) {
 			if (eat_nut(cell, nut)) {
@@ -242,11 +236,20 @@ struct status {
 			}
 			else if (r / enemy.r < LAM) {
 				//威胁算在g里面
-				h += gain_cell_run(cell, enemy);
-				++count;
+				//h += gain_cell_run(cell, enemy);
+				double gain = gain_cell_run(cell, enemy);
+				if (gain < 0) safe = false;
+				score += gain;
+				//++count;
 			}
 		}
 		if (count) h /= count;
+        if(fa != -1 && all_status[fa].safe && !safe){//进入危险
+            score -= 10000;
+        }
+        if(fa != -1 && !all_status[fa].safe && safe){//离开危险
+            score += 7000; //进入过危险
+        }
 		ave_score = get_ave_score();
 	}
 };
@@ -312,12 +315,13 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 		newcellinfo.push_back(cell);
 	}
 
-    s0.checkSafe(newcellinfo);
 
 	int size = 1;
 	priority_queue<status>q;
 	vector<status>all_status;
 
+    //s0.checkSafe(newcellinfo);
+	s0.update_score(newnutinfo, newcellinfo, all_status);
 	all_status.push_back(s0);
 
 	vector<int>dirs = get_dirs(s0, s0, info);
