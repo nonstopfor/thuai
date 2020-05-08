@@ -54,7 +54,7 @@ double gain_cell_eat(CellInfo& me, CellInfo& enemy) {
 double gain_cell_run(CellInfo& me, CellInfo& enemy) {
 	//逃跑
 	double u = dist(me.x, me.y, enemy.x, enemy.y) - 2 * enemy.r / 3;
-	double gain = (PI * enemy.r * enemy.r + 500) * 2 * (maxSpeed(me) + maxSpeed(enemy)) / u;
+	double gain = (PI * me.r * me.r + 500) * 2 * 5 * 10 * 10 * (maxSpeed(me) + maxSpeed(enemy)) / u;
 	return -gain;
 }
 
@@ -90,7 +90,6 @@ bool eat_cell(CellInfo& cell, CellInfo& target) {
 
 
 struct status;
-vector<status>all_status;
 
 struct status {
 	//A*搜索过程中的一个状态
@@ -105,23 +104,25 @@ struct status {
 	int num = 0;//在vector中的下标
 	double k = 1.5;//奖励衰减因子
 	double h = 0;//估价值
+	bool end = false;//为true的时候不再拓展
 	status(double _x, double _y, double _r, double _v, int _d, int _step = 0) :x(_x), y(_y), r(_r), v(_v), d(_d), step(_step) {
 
 	}
 	double get_ave_score() const {
-		return score / step + h;
+		return (score + h) / step;
 	}
 	bool operator<(const status& t) const {
 		return get_ave_score() < t.get_ave_score();
 	}
-	int get_root() {
+
+	int get_root(vector<status>& v) {
 		int cur_num = num;
-		//cout << cur_num << endl;
-		while (all_status[cur_num].fa != 0) {
-			cur_num = all_status[cur_num].fa;
+		while (v[cur_num].fa != 0) {
+			cur_num = v[cur_num].fa;
 		}
 		return cur_num;
 	}
+
 	status move(int dir) {
 		status t = *this;
 		const double maxSpeed = 20.0 / t.r;
@@ -163,10 +164,11 @@ struct status {
 			if (eat_cell(cell, enemy)) {
 				score += (PI * enemy.r * enemy.r + 500) / exp(k * (step - 1));
 				cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
-
+				end = true;
 			}
 			else if (eat_cell(enemy, cell)) {
 				score = -MAX_SCORE;
+				end = true;
 				return;
 			}
 		}
@@ -175,6 +177,7 @@ struct status {
 			if (eat_nut(cell, nut)) {
 				score += (PI * nut.nur * nut.nur) / exp(k * (step - 1));
 				cell.r = sqrt(cell.r * cell.r + nut.nur * nut.nur);
+				end = true;
 			}
 		}
 
@@ -203,20 +206,38 @@ struct status {
 	}
 };
 
-vector<int>get_dirs(status s0, Info& info) {
+vector<int>get_dirs(status s0, status st, Info& info) {
 	vector<int>dirs;
 	//离当前方向较近的更密
+	int d = point_dir(s0.x, s0.y, st.x, st.y);
 	for (int i = 0; i < 60; i += 5) {
-		dirs.push_back((i + s0.d) % 360);
-		dirs.push_back((s0.d - i + 360) % 360);
+		dirs.push_back((i + d) % 360);
+		dirs.push_back((d - i + 360) % 360);
 	}
-	for (int i = 60; i < 180; i += 10) {
-		dirs.push_back((i + s0.d) % 360);
-		dirs.push_back((s0.d - i + 360) % 360);
+	if (st.step < 1) {
+		for (int i = 60; i < 180; i += 10) {
+			dirs.push_back((i + d) % 360);
+			dirs.push_back((d - i + 360) % 360);
+		}
+	}
+	else {
+		for (int i = 60; i < 90; i += 10) {
+			dirs.push_back((i + d) % 360);
+			dirs.push_back((d - i + 360) % 360);
+		}
 	}
 	return dirs;
 }
 int times = 0;
+void clear(priority_queue<status>& q) {
+	//priority_queue<status>().swap(q);
+	while (!q.empty()) q.pop();
+}
+void clear(vector<status>& v) {
+	//vector<status>().swap(v);
+	while (!v.empty()) v.clear();
+}
+
 int get_best_move_dir(status s0, Info& info, double start_time, double max_time) {
 	//只考虑一定范围内的细胞和营养物质
 	vector<NutrientInfo>newnutinfo;
@@ -244,30 +265,33 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 		if (dist(cell.x, cell.y, s0.x, s0.y > 10 * s0.r)) continue;
 		newcellinfo.push_back(cell);
 	}
-	//cout << "newnutinfo.size():" << newnutinfo.size() << endl;
-	//cout << "newcellinfo.size():" << newcellinfo.size() << endl;
-	all_status.clear();
-	assert(all_status.empty());
-	all_status.push_back(s0);
-	assert(s0.num == 0);
+
+	int size = 1;
 	priority_queue<status>q;
-	//queue<status>q;
-	vector<int>dirs = get_dirs(s0, info);
+	vector<status>all_status;
+
+	all_status.push_back(s0);
+
+	vector<int>dirs = get_dirs(s0, s0, info);
 	for (auto& dir : dirs) {
 		status w = s0.move(dir);
 		w.update_score(newnutinfo, newcellinfo);
-		w.num = all_status.size();
+		w.num = size;
+
 		q.push(w);
 		all_status.push_back(w);
+		++size;
 	}
 	double max_ave_score = -1e10;
 	int best_status_num = 0;
 	int max_step = 0;
+	map<int, int>cnt;
 	while (!q.empty()) {
 		++times;
 		status st = q.top(); q.pop();
-		//cout << st.step << endl;
-		//cout << st.get_root() << endl;
+		//cout << "step/score/h/ave_score:" << st.step << "/" << st.score << "/" << st.h << "/" << st.get_ave_score() << endl;
+
+		cnt[st.get_root(all_status)]++;
 		max_step = max(max_step, st.step);
 		double score = st.get_ave_score();
 		if (score > max_ave_score) {
@@ -276,30 +300,35 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 		}
 		double end_time = clock();
 		if ((end_time - start_time) / CLOCKS_PER_SEC * 1000 > max_time) break;
+		if (st.end) continue;//不再拓展该节点
 		if (st.step > 6) continue;//大于6步就不再搜了
-		vector<int>tmp_dirs = get_dirs(st, info);
+		vector<int>tmp_dirs = get_dirs(s0, st, info);
 		for (auto& dir : tmp_dirs) {
 			status w = st.move(dir);
 			w.update_score(newnutinfo, newcellinfo);
-			w.num = all_status.size();
+			w.num = size;
+
 			q.push(w);
 			all_status.push_back(w);
+			++size;
 		}
 
 	}
 	int best_dir = 0;
-	int o = 0;
+	/*
+	for (int i = 1; i <= 48; ++i) {
+		cout << i << ":" << cnt[i] << endl;
+		cout << "score/h/ave_score:" << all_status[i].score << "/" << all_status[i].h << "/" << all_status[i].get_ave_score() << endl;
+	}
+	*/
+	//cout << "before while:best_status_num/all_status.size():" << best_status_num << "/" << all_status.size() << endl;
 	while (best_status_num != 0) {
-		if (best_status_num >= all_status.size() || best_status_num < 0) {
-			cout << "best_status_num >= all_status.size():" << best_status_num << "/" << all_status.size() << endl;
-			break;
-		}
+
 		best_dir = all_status[best_status_num].d;
 		best_status_num = all_status[best_status_num].fa;
-		++o;
-		cout << o << endl;
+
 	}
-	cout << "best_dir:" << best_dir << endl;
+	//cout << "best_dir:" << best_dir << endl;
 	cout << "max step:" << max_step << endl;
 	return best_dir;
 }
@@ -361,13 +390,13 @@ void player_ai(Info& info)
 
 		status s0(curCell.x, curCell.y, curCell.r, curCell.v, curCell.d);
 		double tmp_start_time = clock();
-		double max_time = 120.0 / cell_num;
+		double max_time = 140.0 / cell_num;
 		int dir = get_best_move_dir(s0, info, tmp_start_time, max_time);
 		info.myCommandList.addCommand(Move, curCell.id, dir);
 
-		cout << "times: " << times << endl;
+		//cout << "times: " << times << endl;
 		double end_time = clock();
-		cout << "time(ms): " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
+		//cout << "time(ms): " << (end_time - start_time) / CLOCKS_PER_SEC * 1000 << endl;
 	}
 
 }
