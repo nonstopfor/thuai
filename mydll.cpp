@@ -453,13 +453,17 @@ bool div_safe(Info& info, CellInfo& me, double tx, double ty,
 	rush.x = dx * rushRatio + stay.x;
 	rush.y = dy * rushRatio + stay.y;
 	rush.r = sqrt(stay.r * stay.r + add_r * add_r);
+	rush.v = 1;
+	rush.d = (int)(atan2(dy, dx) / PI * 180 + 360) % 360;
 	bool bothAreSafe = true;
 	for (int i = 0; i < info.cellInfo.size(); ++i) {
 		auto& enemy = info.cellInfo[i];
 		if (enemy.ownerid == myID) continue;
 
-		if ((enemy.r * LAM > stay.r && dist(stay.x, stay.y, enemy.x, enemy.y) < threatenR(stay, enemy)) ||
-			(enemy.r * LAM > rush.r && dist(rush.x, rush.y, enemy.x, enemy.y) < threatenR(rush, enemy))) {
+		if ((enemy.r * LAM > stay.r && dist(stay.x, stay.y, enemy.x, enemy.y) <
+			 threatenR(stay, enemy)+brakeLen(stay)) ||
+			(enemy.r * LAM > rush.r && dist(rush.x, rush.y, enemy.x, enemy.y) <
+			 threatenR(rush, enemy)+brakeLen(rush))) {
 			//cout << "div not safe" << endl;
 
 			bothAreSafe = false;
