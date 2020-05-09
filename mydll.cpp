@@ -237,7 +237,7 @@ struct status {
 			if (enemy.ownerid == myID) continue;
 			if (eat_cell(cell, enemy)) {
 				//if (info.round > PREY_ROUND || step == 1) {
-				if (cell.r > PREY_R || step == 1) {
+				if (cell.r > PREY_R) {
 					score += (PI * enemy.r * enemy.r + 500) / step / 10.0;
 					cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
 					//end = true;
@@ -384,9 +384,9 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 			if (enemy.ownerid == myID) continue;
 			if (enemy.r < nut.nur) continue;
 			double ed = point_dir(enemy.x, enemy.y, nut.nux, nut.nuy);
-			if (abs(ed - enemy.d) > 10) continue;
+			if (abs(ed - enemy.d) > 3) continue;
 			int me_t = compute_time(me, nut.nux, nut.nuy, true);
-			int enemy_t = compute_time(enemy, nut.nux, nut.nuy, true);
+			int enemy_t = compute_time(enemy, nut.nux, nut.nuy, true) - 1;
 			if (enemy_t < me_t) {
 				flag = true; break;
 			}
