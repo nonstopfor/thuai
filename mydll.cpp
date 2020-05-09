@@ -16,7 +16,7 @@ using namespace std;
 #define LAM 0.9
 #define N 300
 #define MAX_SCORE 1e10
-#define PREY_ROUND 250
+#define PREY_ROUND 300
 #define DIV_FOR_NUT_MINR 10
 TPlayerID myID;
 /*
