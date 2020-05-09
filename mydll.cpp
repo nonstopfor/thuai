@@ -17,6 +17,7 @@ using namespace std;
 #define N 300
 #define MAX_SCORE 1e10
 #define PREY_ROUND 250
+#define PREY_R 10
 #define DIV_FOR_NUT_MINR 10
 TPlayerID myID;
 /*
@@ -55,6 +56,39 @@ double threatenR(CellInfo& myCell, CellInfo& cell) {
 	double divDist = canDivEatMe ? 1.2 * newEnemyR : 0;
 	return 2.0 / 3 * cell.r + divDist + 4.0 * maxSpeed(cell);
 }
+
+double advancePerFrame(CellInfo& cell, int dir) {
+	double v = cell.v * cos((cell.d - dir) * PI / 180);
+	double maxSpd = maxSpeed(cell), acc = accelerate(cell);
+	double accTime = (maxSpd - v) / acc;
+	if (accTime < 1) {
+		double accLen = v * accTime + 0.5 * acc * accTime * accTime,
+			   uniLen = maxSpd * (1 - accTime);
+		return accLen + uniLen;
+	}
+	else return v + 0.5 * acc;
+}
+
+int compute_time(CellInfo& cell, double tx, double ty, bool reduce_r=false) {
+	double delta_x = tx - cell.x, delta_y = ty - cell.y;
+	double dist = sqrt(delta_x * delta_x + delta_y * delta_y) -
+		   (reduce_r ? 2.0 / 3 * cell.r : 0);
+	if (dist <= 0) return 0;
+	double acc = 10 / cell.r, top = 20 / cell.r;//加速度，最大速度
+	double direction = (int)(atan2(delta_x, delta_y) / PI * 180 + 360) % 360;
+	double cur_v = cell.v * cos((cell.d - direction) / 180.0 * PI);//当前速度
+	double reach_top_time = (top - cur_v) / acc;//达到最大速度所需时间,连续形式
+	double reach_top_dist = (top * top - cur_v * cur_v) / 2 / acc;//2ax = vt^2- v0^2
+	double t_consume = 0;
+	if (reach_top_dist >= dist) {//加速过程可cover dist	
+		t_consume = (-cur_v + sqrt(cur_v * cur_v + 2 * acc * dist)) / acc;
+	} else {
+		t_consume += reach_top_time;
+		t_consume += (dist - reach_top_dist) / top;
+	}
+	return ceil(t_consume);
+}
+
 int point_dir(double x1, double y1, double x2, double y2) {
 	double dx = x2 - x1;
 	double dy = y2 - y1;
@@ -202,7 +236,8 @@ struct status {
 		for (auto& enemy : cell_info) {
 			if (enemy.ownerid == myID) continue;
 			if (eat_cell(cell, enemy)) {
-				if (info.round > PREY_ROUND || step == 1) {
+				//if (info.round > PREY_ROUND || step == 1) {
+				if (cell.r > PREY_R || step == 1) {
 					score += (PI * enemy.r * enemy.r + 500) / step / 10.0;
 					cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
 					//end = true;
@@ -246,7 +281,8 @@ struct status {
 			}
 			if (enemy.r / r >= LAM && r / enemy.r >= LAM) continue;
 			if (enemy.r / r < LAM) {
-				if (info.round > PREY_ROUND) {
+				//if (info.round > PREY_ROUND) {
+				if (cell.r > PREY_R) {
 					h += gain_cell_eat(cell, enemy);
 					++count;
 				}
@@ -336,6 +372,33 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 			//有火网时不吃在火网外的营养
 			continue;
 		}
+		//把抢不到的营养筛掉
+		bool flag = false;
+		CellInfo me;
+		me.x = s0.x;
+		me.y = s0.y;
+		me.r = s0.r;
+		me.v = s0.v;
+		me.d = s0.d;
+		for (auto& enemy : info.cellInfo) {
+			if (enemy.ownerid == myID) continue;
+			if (enemy.r < nut.nur) continue;
+			double ed = point_dir(enemy.x, enemy.y, nut.nux, nut.nuy);
+			if (abs(ed - enemy.d) > 10) continue;
+			int me_t = compute_time(me, nut.nux, nut.nuy, true);
+			int enemy_t = compute_time(enemy, nut.nux, nut.nuy, true);
+			if (enemy_t < me_t) {
+				flag = true; break;
+			}
+			if (enemy_t == me_t) {
+				double newr = sqrt(enemy.r * enemy.r + nut.nur * nut.nur);
+				if (me.r / newr < LAM) {
+					flag = true;
+					break;
+				}
+			}
+		}
+		if (flag) continue;
 		newnutinfo.push_back(nut);
 	}
 	if (newnutinfo.size() == 0 && info.round < 800) newnutinfo.push_back(mostCloseNut);
