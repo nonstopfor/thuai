@@ -169,7 +169,7 @@ struct status {
 		t.step++;
 		t.fa = num;
 		t.h = 0;//g继承父节点的，h另外算
-		if (abs(t.x - x) < 0.01 && abs(t.y - y) < 0.01) t.end = true;
+		if (abs(t.x - x) < 0.01 && abs(t.y - y) < 0.01) t.end = true;//没动就不继续拓展了
 		return t;
 	}
 
@@ -205,7 +205,7 @@ struct status {
 				if (info.round > PREY_ROUND || step == 1) {
 					score += (PI * enemy.r * enemy.r + 500) / step;
 					cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
-					end = true;
+					//end = true;
 				}
 
 			}
@@ -219,7 +219,7 @@ struct status {
 				if (eat_nut(cell, nut)) {
 					score += (PI * nut.nur * nut.nur) / step;
 					cell.r = sqrt(cell.r * cell.r + nut.nur * nut.nur);
-					end = true;
+					//end = true;
 				}
 			}
 			if (info.round >= 800 && dist(x, y, 150, 150) > info.firenetInfo[0].er) {
@@ -333,7 +333,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 		}
 		newnutinfo.push_back(nut);
 	}
-	if (newnutinfo.size() == 0) newnutinfo.push_back(mostCloseNut);
+	if (newnutinfo.size() == 0 && info.round < 800) newnutinfo.push_back(mostCloseNut);
 
 	for (auto& cell : info.cellInfo) {
 		if (dist(cell.x, cell.y, s0.x, s0.y) > 10 * s0.r) continue;
@@ -519,6 +519,7 @@ void player_ai(Info& info)
 				cell_num++;
 				continue;
 			}
+			
 			else if (info.round < PREY_ROUND && curCell.r > DIV_FOR_NUT_MINR) {
 				//考虑分裂吃营养，只在前300回合并且r大于10
 				double maxNutR = 0;
@@ -545,6 +546,7 @@ void player_ai(Info& info)
 					continue;
 				}
 			}
+			
 		}
 
 		status s0(curCell.x, curCell.y, curCell.r, curCell.v, curCell.d);
