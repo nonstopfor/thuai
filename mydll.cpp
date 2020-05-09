@@ -77,7 +77,7 @@ double gain_cell_run(CellInfo& me, CellInfo& enemy) {
 	double u = dist(me.x, me.y, enemy.x, enemy.y);
 	double gain = 0;
 	if (u < threatenR(me, enemy) + brakeLen(me)) {
-		gain = (PI * me.r * me.r + 500) * 10000 * (maxSpeed(me) + maxSpeed(enemy)) / u;
+		gain = (PI * me.r * me.r + 500) * 10000 * (maxSpeed(me) + maxSpeed(enemy)) / max(0.001, u - 2.0 * enemy.r / 3);
 	}
 	//double gain = (PI * me.r * me.r + 500) * 2 * 5 * 10 * 10 * (maxSpeed(me) + maxSpeed(enemy)) / u;
 	return -gain;
@@ -519,7 +519,7 @@ void player_ai(Info& info)
 				cell_num++;
 				continue;
 			}
-			
+
 			else if (info.round < PREY_ROUND && curCell.r > DIV_FOR_NUT_MINR) {
 				//考虑分裂吃营养，只在前300回合并且r大于10
 				double maxNutR = 0;
@@ -546,7 +546,7 @@ void player_ai(Info& info)
 					continue;
 				}
 			}
-			
+
 		}
 
 		status s0(curCell.x, curCell.y, curCell.r, curCell.v, curCell.d);
