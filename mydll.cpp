@@ -236,6 +236,7 @@ struct status {
 			}
 			double friendh = 0;
 			int friendcount = 0;
+            int threatenCount = 0;
 			for (auto& enemy : cell_info) {
 				if (info.round < 800 && enemy.ownerid == myID) continue;
 				if (info.round >= 800 && enemy.ownerid == myID) {
@@ -253,13 +254,17 @@ struct status {
 					//威胁算在g里面
 					//h += gain_cell_run(cell, enemy);
 					double gain = gain_cell_run(cell, enemy);
-					if (gain < 0) safe = false;
+					if (gain < 0){
+                        safe = false;
+                        threatenCount ++;
+                    }
 					threatenh += gain;
 					//score += gain;
 					//++count;
 				}
 			}
 			if (count) h /= count;
+            if (threatenCount) threatenh /= threatenCount;
 			//if (friendcount) friendh /= friendcount;
 			h += threatenh;
 			h += friendh;
