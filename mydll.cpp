@@ -203,7 +203,7 @@ struct status {
 			if (enemy.ownerid == myID) continue;
 			if (eat_cell(cell, enemy)) {
 				if (info.round > PREY_ROUND || step == 1) {
-					score += (PI * enemy.r * enemy.r + 500) / step;
+					score += (PI * enemy.r * enemy.r + 500) / step / 10.0;
 					cell.r = sqrt(cell.r * cell.r + enemy.r * enemy.r);
 					//end = true;
 				}
@@ -214,69 +214,69 @@ struct status {
 				end = true;
 				return;
 			}
+        }
 
-			for (auto& nut : nut_info) {
-				if (eat_nut(cell, nut)) {
-					score += (PI * nut.nur * nut.nur) / step;
-					cell.r = sqrt(cell.r * cell.r + nut.nur * nut.nur);
-					//end = true;
-				}
+		for (auto& nut : nut_info) {
+			if (eat_nut(cell, nut)) {
+				score += (PI * nut.nur * nut.nur) / step;
+				cell.r = sqrt(cell.r * cell.r + nut.nur * nut.nur);
+				//end = true;
 			}
-			if (info.round >= 800 && dist(x, y, 150, 150) > info.firenetInfo[0].er) {
-				score -= 0.04 * PI * r * r;
-			}
-
-			//估计h值
-			int count = 0;
-			double threatenh = 0;
-			for (auto& nut : nut_info) {
-				if (nut.nur >= r) continue;
-				h += gain_nut(cell, nut);
-				++count;
-			}
-			double friendh = 0;
-			int friendcount = 0;
-            int threatenCount = 0;
-			for (auto& enemy : cell_info) {
-				if (info.round < 800 && enemy.ownerid == myID) continue;
-				if (info.round >= 800 && enemy.ownerid == myID) {
-					friendh += 100000 * PI * enemy.r * enemy.r / max(0.01, distCell(cell, enemy) - max(cell.r, enemy.r) * 2.0 / 3);
-					++friendcount;
-				}
-				if (enemy.r / r >= LAM && r / enemy.r >= LAM) continue;
-				if (enemy.r / r < LAM) {
-					if (info.round > PREY_ROUND) {
-						h += gain_cell_eat(cell, enemy);
-						++count;
-					}
-				}
-				else if (r / enemy.r < LAM) {
-					//威胁算在g里面
-					//h += gain_cell_run(cell, enemy);
-					double gain = gain_cell_run(cell, enemy);
-					if (gain < 0){
-                        safe = false;
-                        threatenCount ++;
-                    }
-					threatenh += gain;
-					//score += gain;
-					//++count;
-				}
-			}
-			if (count) h /= count;
-            if (threatenCount) threatenh /= threatenCount;
-			//if (friendcount) friendh /= friendcount;
-			h += threatenh;
-			h += friendh;
-
-			if (fa != -1 && all_status[fa].safe && !safe) {//进入危险
-				score -= 10000;
-			}
-			if (fa != -1 && !all_status[fa].safe && safe) {//离开危险
-				score += 7000; //进入过危险
-			}
-			ave_score = get_ave_score();
 		}
+		if (info.round >= 800 && dist(x, y, 150, 150) > info.firenetInfo[0].er) {
+			score -= 0.04 * PI * r * r;
+		}
+
+		//估计h值
+		int count = 0;
+		double threatenh = 0;
+		for (auto& nut : nut_info) {
+			if (nut.nur >= r) continue;
+			h += gain_nut(cell, nut);
+			++count;
+		}
+		double friendh = 0;
+		int friendcount = 0;
+        int threatenCount = 0;
+		for (auto& enemy : cell_info) {
+			if (info.round < 800 && enemy.ownerid == myID) continue;
+			if (info.round >= 800 && enemy.ownerid == myID) {
+				friendh += 100000 * PI * enemy.r * enemy.r / max(0.01, distCell(cell, enemy) - max(cell.r, enemy.r) * 2.0 / 3);
+				++friendcount;
+			}
+			if (enemy.r / r >= LAM && r / enemy.r >= LAM) continue;
+			if (enemy.r / r < LAM) {
+				if (info.round > PREY_ROUND) {
+					h += gain_cell_eat(cell, enemy);
+					++count;
+				}
+			}
+			else if (r / enemy.r < LAM) {
+				//威胁算在g里面
+				//h += gain_cell_run(cell, enemy);
+				double gain = gain_cell_run(cell, enemy);
+				if (gain < 0){
+                    safe = false;
+                    threatenCount ++;
+                }
+				threatenh += gain;
+				//score += gain;
+				//++count;
+			}
+		}
+		if (count) h /= count;
+        if (threatenCount) threatenh /= threatenCount;
+		//if (friendcount) friendh /= friendcount;
+		h += threatenh;
+		h += friendh;
+
+		if (fa != -1 && all_status[fa].safe && !safe) {//进入危险
+			score -= 10000;
+		}
+		if (fa != -1 && !all_status[fa].safe && safe) {//离开危险
+			score += 7000; //进入过危险
+		}
+		ave_score = get_ave_score();
 	};
 
 };
@@ -341,6 +341,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	if (newnutinfo.size() == 0 && info.round < 800) newnutinfo.push_back(mostCloseNut);
 
 	for (auto& cell : info.cellInfo) {
+        //if(cell.ownerid == info.myID) continue;
 		if (dist(cell.x, cell.y, s0.x, s0.y) > 10 * s0.r) continue;
 		double t = 1 - sqrt(2) / 3;
 		if (min(abs(cell.x), abs(N - cell.x)) <= s0.r * t) continue;
@@ -353,6 +354,7 @@ int get_best_move_dir(status s0, Info& info, double start_time, double max_time)
 	}
 
 
+    //cout<<"CellInfo: "<<newcellinfo.size()<<endl;
 	int size = 1;
 	priority_queue<status>q;
 	vector<status>all_status;
